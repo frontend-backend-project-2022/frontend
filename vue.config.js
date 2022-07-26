@@ -4,6 +4,8 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
-    plugins: [new MonacoWebpackPlugin()]
+    plugins: [new MonacoWebpackPlugin({
+      languages: ['javascript', 'python']
+    })]
   }
 })
