@@ -10,7 +10,12 @@ const routes = [
   {
     path: '/editor',
     name: 'editor',
-    component: () => import(/* webpackChunkName: "about" */ '../views/EditorView.vue') // lazy load
+    component: () => import('../views/EditorView.vue') // lazy load
+  },
+  {
+    path: '/terminal',
+    name: 'terminal',
+    component: () => import('../views/TerminalView.vue') // lazy load
   }
 ]
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="about">
+  <div class="editor">
     <div id="container" style="height: 600px; text-align: left;"></div>
   </div>
 </template>

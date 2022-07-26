@@ -14,7 +14,8 @@
     "monaco-editor-webpack-plugin": "^7.0.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
-    "vuex": "^4.0.0"
+    "vuex": "^4.0.0",
+    "xterm": "^4.19.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
