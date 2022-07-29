@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import EditorView from '../views/EditorView.vue'
 
 const routes = [
   {
@@ -10,7 +11,7 @@ const routes = [
   {
     path: '/editor',
     name: 'editor',
-    component: () => import('../views/EditorView.vue') // lazy load
+    component: EditorView
   },
   {
     path: '/terminal',
