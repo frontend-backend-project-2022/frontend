@@ -12,10 +12,12 @@
     "element-plus": "^2.2.10",
     "monaco-editor": "^0.33.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
+    "socket.io-client": "^4.5.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
     "vuex": "^4.0.0",
-    "xterm": "^4.19.0"
+    "xterm": "^4.19.0",
+    "xterm-addon-attach": "^0.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

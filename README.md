@@ -1,4 +1,6 @@
-# webide-frontend
+# FrontEnd
+
+要查看Xterm.js Demo，请先在`localhost:5000`运行后端。
 
 ## Project setup
 ```
@@ -9,16 +11,3 @@ yarn install
 ```
 yarn serve
 ```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

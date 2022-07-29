@@ -9,7 +9,17 @@ export default {
   mounted () {
     const term = new this.$xterm.Terminal()
     term.open(document.getElementById('xterm-container'))
-    term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m\n $ ')
+
+    const socket = this.$io('http://localhost:5000')
+    term.onData(chunk => {
+      socket.emit('message', chunk)
+    })
+    socket.on('connect', () => {
+      console.log(socket.id) // x8WIv7-mJelg7on_ALbx
+    })
+    socket.on('response', (data) => {
+      term.write(data)
+    })
   }
 }
 </script>
