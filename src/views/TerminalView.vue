@@ -14,7 +14,7 @@ export default {
     term.onData(chunk => {
       socket.emit('message', chunk)
     })
-    socket.on('connect', () => {
+    socket.emit('connectSignal', 'Dave', () => {
       console.log(socket.id) // x8WIv7-mJelg7on_ALbx
     })
     socket.on('response', (data) => {
