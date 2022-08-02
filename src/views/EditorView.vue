@@ -1,16 +1,25 @@
 <template>
-  <div class="editor">
-    <div id="container" style="height: 600px; text-align: left;"></div>
-  </div>
+  <MonacoEditor v-model:data="code_str" language="python" id="monaco-editor"/>
+  <p>{{this.code_str}}</p>
 </template>
 
 <script>
+import MonacoEditor from '@/components/MonacoEditor.vue'
+
 export default {
-  mounted () {
-    this.$monaco.editor.create(document.getElementById('container'), {
-      value: ['function x() {', '\tconsole.log("Hello world!");', '}'].join('\n'),
-      language: 'javascript'
-    })
+  components: {
+    MonacoEditor
+  },
+  data () {
+    return {
+      code_str: ''
+    }
   }
 }
 </script>
+
+<style scoped>
+#monaco-editor {
+  height: 600px;
+}
+</style>
