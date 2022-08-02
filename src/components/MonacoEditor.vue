@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import * as monaco from 'monaco-editor'
 import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc'
 import {
   MonacoLanguageClient,
@@ -27,17 +28,17 @@ export default {
       ...getMessageServiceOverride(document.body)
     })
     // register Monaco languages
-    this.$monaco.languages.register({
+    monaco.languages.register({
       id: 'python',
       extensions: ['.py', '.pyc', '.pyw', 'pyo', 'pyd'],
       aliases: ['python', 'py']
     })
     // create editor
-    const editor = this.$monaco.editor.create(document.getElementById('container'), {
-      model: this.$monaco.editor.createModel(
+    const editor = monaco.editor.create(document.getElementById('container'), {
+      model: monaco.editor.createModel(
         this.data,
         this.language,
-        this.$monaco.Uri.parse('inmemory://model.py')
+        monaco.Uri.parse('inmemory://model.py')
       ),
       glyphMargin: true,
       lightbulb: {

@@ -5,15 +5,21 @@
 </template>
 
 <script>
+import * as xterm from 'xterm'
+import 'xterm/css/xterm.css'
+import 'xterm/lib/xterm.js'
+import { FitAddon } from 'xterm-addon-fit'
+import { io } from 'socket.io-client'
+
 export default {
   mounted () {
-    const term = new this.$xterm.Terminal()
-    const fitAddon = new this.$xterm.FitAddon()
+    const term = new xterm.Terminal()
+    const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
     term.open(document.getElementById('xterm-container'))
     fitAddon.fit()
 
-    const socket = this.$io('http://localhost:5000')
+    const socket = io('http://localhost:5000')
     term.onData(chunk => {
       socket.emit('message', chunk)
     })
