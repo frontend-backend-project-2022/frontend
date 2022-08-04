@@ -54,7 +54,7 @@ export default {
     // install Monaco language client services
     MonacoServices.install(editor)
     // create the web socket
-    const url = 'ws://localhost:3001/python'
+    const url = 'ws://localhost:5000/python'
     const webSocket = new WebSocket(url)
     // connect to python language server when the web socket is opened
     webSocket.onopen = () => {
