@@ -7,6 +7,7 @@ module.exports = defineConfig({
       new MonacoWebpackPlugin({
         languages: ['javascript', 'python', 'typescript']
       })
-    ]
+    ],
+    resolve: { fallback: { "path": require.resolve("path-browserify") } }
   }
 })
