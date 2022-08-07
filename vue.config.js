@@ -8,6 +8,18 @@ module.exports = defineConfig({
         languages: ['javascript', 'python', 'typescript']
       })
     ],
-    resolve: { fallback: { "path": require.resolve("path-browserify") } }
+    resolve: { fallback: { path: require.resolve('path-browserify') } }
+  },
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
   }
 })

@@ -12,7 +12,6 @@ import {
   CloseAction,
   ErrorAction,
   MonacoServices
-  // MessageTransports
 } from 'monaco-languageclient'
 import { StandaloneServices } from 'vscode/services'
 import getMessageServiceOverride from 'vscode/service-override/messages'
@@ -44,8 +43,6 @@ export default {
       lightbulb: {
         enabled: true
       }
-      // value: this.data,
-      // language: this.language
     })
     // emit change when text changed. (auto used by v-model)
     editor.onDidChangeModelContent = (event) => {

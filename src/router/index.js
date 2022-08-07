@@ -1,22 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import EditorView from '../views/EditorView.vue'
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: () => import('../views/HomeView.vue')
   },
   {
-    path: '/editor',
+    path: '/editor/',
     name: 'editor',
-    component: EditorView
+    component: () => import('../views/EditorView.vue')
   },
   {
-    path: '/terminal',
+    path: '/terminal/',
     name: 'terminal',
-    component: () => import('../views/TerminalView.vue') // lazy load
+    component: () => import('../views/TerminalView.vue')
+  },
+  {
+    path: '/login/',
+    name: 'login',
+    component: () => import('../views/LoginView.vue')
+  },
+  {
+    path: '/register/',
+    name: 'register',
+    component: () => import('../views/RegisterView.vue')
   }
 ]
 

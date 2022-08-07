@@ -1,9 +1,10 @@
 <template>
-  <el-menu :router="true" :default-active="$route.path" mode="horizontal">
+<div style="height: 15vh"></div>
+  <!-- <el-menu :router="true" :default-active="$route.path" mode="horizontal">
     <el-menu-item index="/">Home</el-menu-item>
     <el-menu-item index="/editor">Editor Demo</el-menu-item>
     <el-menu-item index="/terminal">Terminal Demo</el-menu-item>
-  </el-menu>
+  </el-menu> -->
   <router-view />
 </template>
 
