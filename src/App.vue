@@ -1,5 +1,4 @@
 <template>
-<div style="height: 15vh"></div>
   <!-- <el-menu :router="true" :default-active="$route.path" mode="horizontal">
     <el-menu-item index="/">Home</el-menu-item>
     <el-menu-item index="/editor">Editor Demo</el-menu-item>
@@ -17,16 +16,7 @@
   color: #2c3e50;
 }
 
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+router-view {
+  margin-top: 0;
 }
 </style>

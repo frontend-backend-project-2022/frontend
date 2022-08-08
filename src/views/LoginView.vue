@@ -1,20 +1,33 @@
 <template>
-  <div class="login">
-    <h1>登录</h1>
-    <el-form :model="formData" label-width="120px" label-position="top">
-        <el-form-item label="用户名">
-            <el-input v-model="formData.username" type="text" id="name" name="username"/>
-        </el-form-item>
-        <el-form-item label="密码">
-            <el-input v-model="formData.password" type="password" show-password/>
+  <div class="login-container">
+    <div class="login-panel">
+      <h1>登录到Web-IDE</h1>
+      <el-form :model="formData" label-width="120px" label-position="top">
+        <el-form-item>
+          <el-input v-model="formData.username" type="text" id="name" name="username" placeholder="用户名">
+            <template #prepend>
+              <el-icon>
+                <User />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
-          <el-row class="buttons-container" justify="space-evenly">
-              <el-button type="primary" @click="loginSubmit">登录</el-button>
-              <el-button @click="$router.push('/register/')">注册新账号</el-button>
-          </el-row>
+          <el-input v-model="formData.password" type="password" show-password placeholder="密码">
+            <template #prepend>
+              <el-icon>
+                <Lock />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
-    </el-form>
+      </el-form>
+      <el-button type="primary" @click="loginSubmit">登录</el-button>
+      <p class="register-container">
+        <span>还未注册？</span>
+        <router-link to="/register/">立即注册新账号</router-link>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -43,20 +56,44 @@ export default {
 </script>
 
 <style scoped>
-.el-form {
-  margin: 40px auto;
-  width: 18%;
+.login-container {
+  box-sizing: border-box;
+  height: 100vh;
+  padding-top: 15vh;
 
-  border-top: 1px solid hsla(210,18%,87%,1);;
-  border-radius: 6px;
-  padding: 16px;
-  padding-bottom: 0;
-  font-size: 14px;
-  background-color: #f6f8fa;
-  border: 1px solid hsla(210,18%,87%,1);;
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  background-position: 200% 150%;
 }
 
-.buttons-container {
+.login-panel {
+  margin: 0 auto;
+  padding: 32px;
+  width: 20%;
+
+  background: #FAFCFF;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.login-panel>h1 {
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 2px;
+  font-weight: 100;
+}
+
+.el-form {
+  margin: 48px 0;
+}
+
+.el-button {
   width: 100%;
+  font-size: 16px;
+  letter-spacing: 2px;
+  padding: 16px 0;
+}
+
+.register-container>span {
+  color: #909399;
 }
 </style>

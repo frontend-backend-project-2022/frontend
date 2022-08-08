@@ -5,17 +5,27 @@ import store from './store'
 
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+
 import axios from 'axios'
 
+// Default Configs
 const app = createApp(App)
 app.use(store)
 app.use(router)
 
+// Use ElementPlus and Icons.
 app.use(ElementPlus)
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
+
+// Use Axios
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 axios.defaults.withCredentials = true
 app.config.globalProperties.$axios = axios
 
+// Login Check in Vue-router
 router.beforeEach(async (to, from, next) => {
   if (to.name !== 'login' && to.name !== 'register') {
     try {
