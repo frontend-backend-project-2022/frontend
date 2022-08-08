@@ -12,11 +12,11 @@
           </el-input>
         </el-form-item>
         <el-form-item label="确认密码">
-          <el-input v-model="formData.password" type="password_confirm" show-password placeholder="请再次输入密码">
+          <el-input v-model="formData.password_confirm" type="password" show-password placeholder="请再次输入密码">
           </el-input>
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="loginSubmit">注册</el-button>
+      <el-button type="primary" @click="registerSubmit">注册</el-button>
       <p class="register-container">
         <router-link to="/login/">返回登录页面</router-link>
       </p>
@@ -44,6 +44,7 @@ export default {
       }
       const response = await this.$axios.post('/api/login/register/', this.formData)
       if (response.data === 'suceess') {
+        this.$message.success('注册成功')
         this.$router.push('/')
       } else {
         this.$message.error('注册失败')
@@ -61,7 +62,7 @@ export default {
 
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
   background-size: 400% 400%;
-  background-position: 200% 200%;
+  background-position: 200% 150%;
 }
 
 .login-panel {
