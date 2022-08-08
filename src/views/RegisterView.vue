@@ -1,23 +1,23 @@
 <template>
-  <div class="login-container">
-    <div class="login-panel">
+  <div class="register-container">
+    <div class="register-panel">
       <h1>注册新账号</h1>
-      <el-form :model="formData" label-width="120px" label-position="top">
-        <el-form-item label="用户名">
+      <el-form :model="formData" label-width="120px" label-position="top" ref="form" :rules="rules">
+        <el-form-item label="用户名" prop="username">
           <el-input v-model="formData.username" type="text" id="name" name="username" placeholder="请输入用户名">
           </el-input>
         </el-form-item>
-        <el-form-item label="密码">
+        <el-form-item label="密码" prop="password">
           <el-input v-model="formData.password" type="password" show-password placeholder="请输入密码">
           </el-input>
         </el-form-item>
-        <el-form-item label="确认密码">
+        <el-form-item label="确认密码" prop="password_confirm">
           <el-input v-model="formData.password_confirm" type="password" show-password placeholder="请再次输入密码">
           </el-input>
         </el-form-item>
       </el-form>
       <el-button type="primary" @click="registerSubmit">注册</el-button>
-      <p class="register-container">
+      <p class="login-container">
         <router-link to="/login/">返回登录页面</router-link>
       </p>
     </div>
@@ -26,26 +26,62 @@
 
 <script>
 export default {
-  name: 'LoginView',
+  name: 'RegisterView',
   data () {
+    const validatePass = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入密码'))
+      } else {
+        if (this.formData.password_confirm !== '') {
+          this.$refs.form.validateField('password_confirm')
+        }
+        callback()
+      }
+    }
+    const validatePass2 = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请再次输入密码'))
+      } else if (value !== this.formData.password) {
+        callback(new Error('两次输入密码不一致!'))
+      } else {
+        callback()
+      }
+    }
     return {
       formData: {
         username: '',
         password: '',
         password_confirm: ''
+      },
+      rules: {
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 3, max: 10, message: '长度应在3到10之间', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, min: 8, max: 20, message: '长度应在8到20之间', trigger: 'blur' },
+          { validator: validatePass, trigger: 'blur' }
+        ],
+        password_confirm: [{ required: true, validator: validatePass2, trigger: 'blur' }]
       }
     }
   },
   methods: {
     async registerSubmit () {
-      if (this.formData.password !== this.formData.password_confirm) {
-        this.$message.error('两次输入密码不一致')
-        return
-      }
+      console.log(this.rules)
+      await this.$refs.form.validate(async (valid, fields) => {
+        if (valid) {
+          await this.sendRegisterData()
+        } else {
+          this.$message.warning('请正确填写注册信息')
+        }
+      })
+    },
+    async sendRegisterData () {
       const response = await this.$axios.post('/api/login/register/', this.formData)
       if (response.data === 'suceess') {
         this.$message.success('注册成功')
-        this.$router.push('/')
+        this.$router.push('/login/')
       } else {
         this.$message.error('注册失败')
       }
@@ -55,7 +91,7 @@ export default {
 </script>
 
 <style scoped>
-.login-container {
+.register-container {
   box-sizing: border-box;
   height: 100vh;
   padding-top: 15vh;
@@ -65,7 +101,7 @@ export default {
   background-position: 200% 150%;
 }
 
-.login-panel {
+.register-panel {
   margin: 0 auto;
   padding: 32px;
   width: 20%;
@@ -75,7 +111,7 @@ export default {
   font-size: 14px;
 }
 
-.login-panel>h1 {
+.register-panel>h1 {
   font-family: Arial, Helvetica, sans-serif;
   letter-spacing: 2px;
   font-weight: 100;
@@ -93,7 +129,7 @@ export default {
   padding: 16px 0;
 }
 
-.register-container>span {
+.login-container>span {
   color: #909399;
 }
 </style>

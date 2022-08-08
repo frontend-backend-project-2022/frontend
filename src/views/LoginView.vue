@@ -44,6 +44,14 @@ export default {
   },
   methods: {
     async loginSubmit () {
+      if (this.formData.username === '') {
+        this.$message.warning('请输入用户名')
+        return
+      }
+      if (this.formData.password === '') {
+        this.$message.warning('请输入密码')
+        return
+      }
       const response = await this.$axios.post('/api/login/', this.formData)
       if (response.data !== 'failed') {
         this.$router.push('/')
