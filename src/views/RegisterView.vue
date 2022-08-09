@@ -68,7 +68,6 @@ export default {
   },
   methods: {
     async registerSubmit () {
-      console.log(this.rules)
       await this.$refs.form.validate(async (valid, fields) => {
         if (valid) {
           await this.sendRegisterData()
