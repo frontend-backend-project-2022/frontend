@@ -1,6 +1,6 @@
 <template>
-  <div class="editor">
-    <div id="container" style="height: 600px; text-align: left;"></div>
+  <div class="editor" style="height: 100%;">
+    <div id="container" style="height: 100%; text-align: left;"></div>
   </div>
 </template>
 
