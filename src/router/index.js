@@ -25,6 +25,11 @@ const routes = [
     path: '/register/',
     name: 'register',
     component: () => import('../views/RegisterView.vue')
+  },
+  {
+    path: '/ide/:containerid/',
+    name: 'ide',
+    component: () => import('../views/IDEView.vue')
   }
 ]
 

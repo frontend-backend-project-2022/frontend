@@ -43,6 +43,17 @@
           <el-table-column prop="language" label="语言" width="180" />
           <el-table-column prop="version" label="版本" />
           <el-table-column prop="time" label="创建时间" />
+          <el-table-column label="操作">
+            <template #default="scope">
+              <el-button type="primary" @click.stop="handleRename(scope.row)">重命名</el-button>
+              <el-popconfirm title="确定要删除工程吗？" confirm-button-text="确认" cancel-button-text="取消"
+                confirm-button-type="danger" @confirm="handleDelete(scope.row)">
+                <template #reference>
+                  <el-button type="danger" @click.stop="">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </el-table-column>
         </el-table>
       </el-main>
     </el-container>
@@ -73,37 +84,62 @@
     </template>
   </el-dialog>
 
+  <el-dialog v-model="renameDialogVisible" title="创建新的工程" width="40%">
+    <el-form ref="renameForm" :model="renameForm" label-width="80px">
+      <el-form-item label="工程 ID" prop="projectname">
+        <el-input v-model="renameForm.containerid"  disabled/>
+      </el-form-item>
+      <el-form-item label="新名称" prop="newname">
+        <el-input v-model="renameForm.newname" placeholder="请填写新的名称"/>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="renameDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitRename">提交</el-button>
+      </span>
+    </template>
+  </el-dialog>
+
 </template>
 
 <script>
 export default {
   name: 'HomeView',
   async created () {
-    const getProjectList = this.$axios.get('/api/database/getAllProjects/')
-      .then((response) => {
-        this.rawData = response.data
-      })
-    const getUserName = this.$axios.get('/api/login/is_logged_in/')
-      .then((response) => {
-        this.username = response.data
-      })
-    await Promise.all([getProjectList, getUserName])
-    this.tableData = this.rawData
+    await Promise.all([this.getProjectList(), this.getUserName()])
   },
   data () {
     return {
       username: '',
       rawData: [], // raw data from backend
       createDialogVisible: false,
+      renameDialogVisible: false,
       projectForm: {
         projectname: '',
         language: '',
         version: ''
       },
-      nowSelectingLanguage: ''
+      nowSelectingLanguage: '',
+      renameForm: {
+        containerid: '',
+        newname: ''
+      }
     }
   },
   methods: {
+    async getProjectList () {
+      await this.$axios.get('/api/database/getAllProjects/')
+        .then((response) => {
+          this.rawData = response.data
+        })
+    },
+    async getUserName () {
+      await this.$axios.get('/api/login/is_logged_in/')
+        .then((response) => {
+          this.username = response.data
+        })
+    },
     async logoutSubmit () {
       const response = await this.$axios.get('/api/login/logout')
       if (response.status === 200) { this.$router.push('/login/') }
@@ -118,14 +154,41 @@ export default {
       }
     },
     handleTableRowClick (row, column, event) {
-      // TODO: to project page
-      console.log(row)
+      // this.$router.push(`/ide/${row.containerid}/`)
+      window.open(`/ide/${row.containerid}/`)
+    },
+    async handleRename (row) {
+      this.renameForm.containerid = row.containerid
+      this.renameForm.newname = ''
+      this.renameDialogVisible = true
+    },
+    async submitRename () {
+      await this.$axios.post('/api/database/updateProject/', this.renameForm)
+        .then(() => {
+          this.$message.success('重命名成功')
+          this.getProjectList()
+        })
+        .catch(() => {
+          this.$message.error('重命名失败')
+        })
+      this.renameDialogVisible = false
+    },
+    async handleDelete (row) {
+      await this.$axios.delete(`/api/database/deleteProject/${row.containerid}`)
+        .then(() => {
+          this.$message.success('删除成功')
+          this.getProjectList()
+        })
+        .catch(() => {
+          this.$message.error('删除失败')
+        })
     },
     async projectFormSubmit () {
       const response = await this.$axios.post('/api/database/createProject', this.projectForm)
       if (response.status === 200) {
         this.$message.success('创建工程成功')
-        this.$router.go(0) // reload page
+        await this.getProjectList()
+        this.createDialogVisible = false
       } else {
         this.$message.error('创建工程失败', response.data)
       }
