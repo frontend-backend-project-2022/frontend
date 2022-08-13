@@ -1,6 +1,6 @@
 <template>
-  <div class="editor" style="height: 100%;">
-    <div id="container" style="height: 100%; text-align: left;"></div>
+  <div class="editor">
+    <div ref="container" id="container"></div>
   </div>
 </template>
 
@@ -22,6 +22,11 @@ export default {
     data: String,
     language: String
   },
+  data () {
+    return {
+      editor: ''
+    }
+  },
   mounted () {
     StandaloneServices.initialize({
       ...getMessageServiceOverride(document.body)
@@ -42,8 +47,13 @@ export default {
       glyphMargin: true,
       lightbulb: {
         enabled: true
+      },
+      automaticLayout: true,
+      minimap: {
+        enabled: false
       }
     })
+    this.editor = editor
     // emit change when text changed. (auto used by v-model)
     editor.onDidChangeModelContent = (event) => {
       this.$emit('update:data', editor.getValue())
@@ -86,9 +96,26 @@ export default {
         }
       })
     }
+  },
+  methods: {
+    fitEditor () {
+      this.editor.domElement.style.height = '400px'
+      this.editor.layout()
+    }
   }
 }
 </script>
 
 <style scoped>
+.editor {
+  height: calc(100% - 2px);
+  width: calc(100% - 2px);
+  letter-spacing: 0;
+}
+
+#container {
+  height: 100%;
+  width: 100%;
+  text-align: left;
+}
 </style>

@@ -23,6 +23,9 @@ export default {
     term.onData(chunk => {
       socket.emit('message', chunk)
     })
+    term.onResize(function (evt) {
+      fitAddon.fit()
+    })
     socket.emit('connectSignal', 'Dave', () => {
       console.log(socket.id) // x8WIv7-mJelg7on_ALbx
     })
@@ -34,7 +37,7 @@ export default {
 </script>
 
 <style scoped>
-.terminal {
+#xterm-container {
   height: 400px;
   text-align: left;
   width: 50%;
