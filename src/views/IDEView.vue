@@ -9,11 +9,18 @@
           </el-button>
         </span>
         <span>
-          <img class="utils-icon" src="../assets/run.png" />
-          <img class="utils-icon" src="../assets/debug.png" />
-          <img class="utils-icon" style="margin-left: 10px;" src="../assets/stop.png" />
-          <el-divider class="utils-divider" direction="vertical" />
-          <img class="utils-icon" src="../assets/config.png" />
+          <el-button text>
+            <img class="utils-icon" src="../assets/run.png" />
+          </el-button>
+          <el-button text>
+            <img class="utils-icon" src="../assets/debug.png" />
+          </el-button>
+          <el-button text style="margin-left: 4px;">
+            <img class="utils-icon" src="../assets/stop.png" />
+          </el-button>
+          <el-button text style="margin-left: 4px;">
+            <img class="utils-icon" src="../assets/config.png" />
+          </el-button>
         </span>
       </el-row>
     </el-header>
@@ -21,16 +28,49 @@
     <el-container>
 
       <el-aside width="300px">
-        <span class="fs-title">
-          文件资源管理器
-        </span>
+        <el-row justify="space-between" style="padding-right: 4px;">
+          <span class="fs-title">
+            文件资源管理器
+          </span>
+          <el-space :size="0">
+            <el-button text>
+              <img class="file-utils-icon" src="../assets/refresh.png" />
+            </el-button>
+            <el-button text>
+              <img class="file-utils-icon" src="../assets/new-file.png" />
+            </el-button>
+            <el-button text>
+              <img class="file-utils-icon" src="../assets/new-folder.png" />
+            </el-button>
+            <el-button text>
+              <img class="file-utils-icon" src="../assets/download.png" />
+            </el-button>
+            <el-button text>
+              <img class="file-utils-icon" src="../assets/upload.png" />
+            </el-button>
+
+          </el-space>
+        </el-row>
+
         <el-divider class="fs-divider"></el-divider>
-        <el-tree :data="filesData" highlight-current indent="8">
+
+        <el-tree :data="filesData" highlight-current indent="8" @contextmenu.prevent="">
           <template #default="{ node }">
-            <span class="custom-tree-node">
-              <img :src="getFileIconUrl(node)"/>
-              <span>{{ node.label }}</span>
-            </span>
+
+            <el-popover ref="popover" :width="100" trigger="contextmenu">
+              <template #reference>
+                <span class="custom-tree-node">
+                  <el-image :src="getFileIconUrl(node)" />
+                  <span>{{ node.label }}</span>
+                </span>
+              </template>
+              <el-space class="file-contextmenu" :size="0" direction="vertical">
+                <el-button text>重命名</el-button>
+                <el-button text>删除</el-button>
+              </el-space>
+
+            </el-popover>
+
           </template>
         </el-tree>
       </el-aside>
@@ -61,14 +101,26 @@
                 <img class="bottom-shell-icon" src="../assets/printer.png" />
                 输出
               </template>
-              TODO: 输出结果框
+              <el-input v-model="outputData" type="textarea" readonly resize="none"
+                :rows="10" />
             </el-tab-pane>
             <el-tab-pane name="调试">
               <template #label>
                 <img class="bottom-shell-icon" src="../assets/debug-black.png" />
                 调试
               </template>
-              TODO: 调试界面
+              <template #default>
+                <el-input v-model="debugOutputData" type="textarea" readonly resize="none"
+                :rows="8" />
+              <el-input v-model="debugInputData">
+                <template #append>
+                  <el-button type="primary">
+                    发送指令
+                  </el-button>
+                </template>
+              </el-input>
+              </template>
+
             </el-tab-pane>
           </el-tabs>
         </el-footer>
@@ -113,7 +165,10 @@ export default {
         file: require('../assets/file.png'),
         python: require('../assets/python.png'),
         cpp: require('../assets/cpp.png')
-      }
+      },
+      outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
+      debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
+      debugInputData: 'qwq'
     }
   },
   mounted () {
@@ -207,8 +262,9 @@ export default {
 }
 
 .el-button.is-text {
-  padding-left: 8px;
   margin: 0;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .project-title {
@@ -230,7 +286,6 @@ export default {
 
 .utils-icon {
   width: 24px;
-  margin-left: 8px;
 }
 
 .utils-divider {
@@ -244,7 +299,8 @@ export default {
 
 .fs-title {
   text-align: left;
-  padding: 4px;
+  padding-top: 6px;
+  padding-left: 12px;
   margin: 0;
   letter-spacing: 0;
   font-family: Arial, Helvetica, sans-serif;
@@ -293,8 +349,27 @@ export default {
   padding: 0;
   height: 41px;
 }
+
+.custom-tree-node {
+  width: 100%;
+  text-align: left;
+}
+
+.custom-tree-node > .el-image {
+  height: 16px;
+  margin-right: 4px;
+}
+
+.file-utils-icon {
+  height: 20px;
+}
+
+.el-textarea, .el-input {
+  --el-input-border-radius: none;
+}
 </style>
 
+<!-- no scoped part -->
 <style>
 .el-tabs__header {
   margin: 0;
@@ -304,8 +379,13 @@ export default {
   border-bottom: 0;
 }
 
-.custom-tree-node > img {
-  height: 16px;
-  margin-right: 4px;
+.el-popover.el-popper {
+  padding: 0;
+}
+
+.file-contextmenu,
+.file-contextmenu>.el-space__item,
+.file-contextmenu>.el-button {
+  width: 100%;
 }
 </style>
