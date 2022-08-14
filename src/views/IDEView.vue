@@ -33,16 +33,45 @@
             文件资源管理器
           </span>
           <el-space :size="0">
-            <el-button text>
+            <el-button text @click="getFileSystemData">
               <img class="file-utils-icon" src="../assets/refresh.png" />
             </el-button>
-            <el-button text>
-              <img class="file-utils-icon" src="../assets/new-file.png" />
-            </el-button>
-            <el-button text>
-              <img class="file-utils-icon" src="../assets/new-folder.png" />
-            </el-button>
-            <el-button text>
+
+            <el-popover placement="top-start" :width="250" v-model:visible="newFilePopoverVisible">
+              <template #reference>
+                <el-button text>
+                  <img class="file-utils-icon" src="../assets/new-file.png" />
+                </el-button>
+              </template>
+              <template #default>
+                <el-input v-model="newFilename" placeholder="请输入新文件名">
+                  <template #append>
+                    <el-button type="primary" @click="createNewFile">
+                      创建
+                    </el-button>
+                  </template>
+                </el-input>
+              </template>
+            </el-popover>
+
+            <el-popover placement="top-start" :width="250" v-model:visible="newFolderPopoverVisible">
+              <template #reference>
+                <el-button text>
+                  <img class="file-utils-icon" src="../assets/new-folder.png" />
+                </el-button>
+              </template>
+              <template #default>
+                <el-input v-model="newFoldername" placeholder="请输入新文件夹名称">
+                  <template #append>
+                    <el-button type="primary" @click="createNewFolder">
+                      创建
+                    </el-button>
+                  </template>
+                </el-input>
+              </template>
+            </el-popover>
+
+            <el-button text @click="downloadFolder">
               <img class="file-utils-icon" src="../assets/download.png" />
             </el-button>
             <el-button text>
@@ -54,10 +83,11 @@
 
         <el-divider class="fs-divider"></el-divider>
 
-        <el-tree :data="filesData" highlight-current indent="8" @contextmenu.prevent="">
+        <el-tree ref="file-tree" :data="filesData" highlight-current indent="8" @contextmenu.prevent="" draggable
+          @current-change="handleFileTreeCurrentChange">
           <template #default="{ node }">
 
-            <el-popover ref="popover" :width="100" trigger="contextmenu">
+            <el-popover ref="popover" :width="50" trigger="contextmenu" v-model:visible="node.contextmenuVisible">
               <template #reference>
                 <span class="custom-tree-node">
                   <el-image :src="getFileIconUrl(node)" />
@@ -65,14 +95,41 @@
                 </span>
               </template>
               <el-space class="file-contextmenu" :size="0" direction="vertical">
-                <el-button text>重命名</el-button>
-                <el-button text>删除</el-button>
-              </el-space>
 
+                <el-popover placement="top-end" :width="250" v-model:visible="node.renamePopoverVisible">
+                  <template #reference>
+                    <el-button text>重命名</el-button>
+                  </template>
+                  <template #default>
+                    <el-input v-model="renameNewName" placeholder="请输入新文件名">
+                      <template #append>
+                        <el-button type="primary" @click="renameFile(node)">
+                          重命名
+                        </el-button>
+                      </template>
+                    </el-input>
+                  </template>
+                </el-popover>
+
+                <el-button text v-if="!node.data.isDir" @click="downloadFile(node)">下载</el-button>
+
+                <el-popconfirm popper-class="el-popover delete-file-popconfirm" style="padding: 0;" title="确定要删除吗？"
+                  confirm-button-text="确定" cancel-button-text="取消" icon="WarningFilled"
+                  @confirm="deleteFileOrFolder(node)">
+                  <template #reference>
+                    <el-button text type="danger">删除</el-button>
+                  </template>
+                </el-popconfirm>
+
+              </el-space>
             </el-popover>
 
           </template>
         </el-tree>
+
+        <!-- hidden link for download -->
+        <el-link ref="download-link" :href="downloadLinkData.href" :download="downloadLinkData.download"></el-link>
+
       </el-aside>
 
       <el-container>
@@ -101,8 +158,7 @@
                 <img class="bottom-shell-icon" src="../assets/printer.png" />
                 输出
               </template>
-              <el-input v-model="outputData" type="textarea" readonly resize="none"
-                :rows="10" />
+              <el-input v-model="outputData" type="textarea" readonly resize="none" :rows="10" />
             </el-tab-pane>
             <el-tab-pane name="调试">
               <template #label>
@@ -110,15 +166,14 @@
                 调试
               </template>
               <template #default>
-                <el-input v-model="debugOutputData" type="textarea" readonly resize="none"
-                :rows="8" />
-              <el-input v-model="debugInputData">
-                <template #append>
-                  <el-button type="primary">
-                    发送指令
-                  </el-button>
-                </template>
-              </el-input>
+                <el-input v-model="debugOutputData" type="textarea" readonly resize="none" :rows="8" />
+                <el-input v-model="debugInputData">
+                  <template #append>
+                    <el-button type="primary">
+                      发送指令
+                    </el-button>
+                  </template>
+                </el-input>
               </template>
 
             </el-tab-pane>
@@ -144,19 +199,18 @@ export default {
     return {
       containerid: '',
       projectInfo: {},
-      editorText: 'from flask import Flask\nfrom flask_cors import CORS\nfrom views.docker import *\nfrom views.database import *\nfrom views.login import login_bp\n\n\n\napp = Flask(__name__, template_folder="templates")\napp.register_blueprint(docker_bp, url_prefix="/docker")\napp.register_blueprint(database_bp, url_prefix="/database")\napp.register_blueprint(login_bp, url_prefix="/login")\n\napp.config["SECRET_KEY"] = "secret!qwq"\n# CSRFProtect(app)\nCORS(app, supports_credentials=True)\n\n# python language server: websocket\nfrom views.pyls import sock\nsock.init_app(app)\n\n# xterm.js\nfrom views.xterm import socketio\nsocketio.init_app(app)\n\n\n@app.route("/")\ndef hello_world():\n    return "<p>Hello, World!</p>"\n\ndb_init()\n# id = docker_connect()\n# docker_exec_bash(id,"mkdir dir1 && mkdir dir2 && touch file2 && cd dir1 && touch file1 && mkdir dir3")\n# docker_getdir(id)\n# docker_rm(id)\n# id = put_test()\n# get_test(id)\n\n# docker_rm(id)\n\nif __name__ == "__main__":\n    app.run(debug=True)\n',
-      filesData: [
-        {
-          label: 'src',
-          children: [{
-            label: 'main.py'
-          }]
-        }, {
-          label: 'requirements.txt'
-        }, {
-          label: '1.cpp'
-        }
-      ],
+      editorText: 'from flask import Flask\n',
+      filesData: [],
+      fileTreeCurrentFileData: '',
+      newFilename: '',
+      newFilePopoverVisible: false,
+      newFoldername: '',
+      newFolderPopoverVisible: false,
+      renameNewName: '',
+      downloadLinkData: {
+        href: '',
+        download: ''
+      },
       footerExpanded: true,
       nowActiveTab: '终端',
       nowActiveFileTab: '',
@@ -172,35 +226,14 @@ export default {
     }
   },
   mounted () {
-    const term = new xterm.Terminal()
-    const fitAddon = new FitAddon()
-    term.loadAddon(fitAddon)
-    term.open(document.getElementById('xterm-container'))
-    fitAddon.fit()
-
-    const socket = io('http://localhost:5000')
-    term.onData(chunk => {
-      socket.emit('message', chunk)
-    })
-    term.onResize(function (evt) {
-      fitAddon.fit()
-    })
-    socket.emit('connectSignal', 'Dave', () => {
-      console.log(socket.id) // x8WIv7-mJelg7on_ALbx
-    })
-    socket.on('response', (data) => {
-      term.write(data)
-    })
+    this.initXtermTerimial()
   },
   components: {
     MonacoEditor
   },
   async created () {
     this.containerid = this.$route.params.containerid
-    await this.$axios.get(`/api/database/getProject/${this.containerid}`)
-      .then((response) => {
-        this.projectInfo = response.data
-      })
+    await Promise.all([this.getContainerData(), this.getFileSystemData()])
   },
   methods: {
     handleOpenTerminal () {
@@ -231,6 +264,158 @@ export default {
         filetype = 'cpp'
       }
       return this.FileTypeIconUrlSet[filetype]
+    },
+    initXtermTerimial () {
+      const term = new xterm.Terminal()
+      const fitAddon = new FitAddon()
+      term.loadAddon(fitAddon)
+      term.open(document.getElementById('xterm-container'))
+      fitAddon.fit()
+
+      const socket = io('http://localhost:5000')
+      term.onData(chunk => {
+        socket.emit('message', chunk)
+      })
+      term.onResize(function (evt) {
+        fitAddon.fit()
+      })
+      socket.emit('connectSignal', this.containerid, () => {
+        console.log(socket.id) // x8WIv7-mJelg7on_ALbx
+      })
+      socket.on('response', (data) => {
+        term.write(data)
+      })
+    },
+    transferRawFilesData (rawData, prefix) {
+      const result = []
+      for (const [label, childData] of Object.entries(rawData)) {
+        const fileObject = {
+          label: label,
+          url: prefix + label,
+          isDir: false,
+          contextmenuVisible: false,
+          renamePopoverVisible: false
+        }
+        if (childData !== '') {
+          fileObject.isDir = true
+          fileObject.children = this.transferRawFilesData(childData, prefix + label + '/')
+        }
+        result.push(fileObject)
+      }
+      // folder go first.
+      result.sort((a, b) =>
+        (('children' in b) - ('children' in a)))
+      return result
+    },
+    getContainerData () {
+      return this.$axios.get(`/api/database/getProject/${this.containerid}`)
+        .then((response) => {
+          this.projectInfo = response.data
+        })
+    },
+    getFileSystemData () {
+      return this.$axios.get(`/api/docker/getdir/${this.containerid}`)
+        .then((response) => {
+          this.filesData = this.transferRawFilesData(response.data, './')
+        })
+    },
+    handleFileTreeCurrentChange (nodeData, node) {
+      this.fileTreeCurrentFileData = nodeData
+    },
+
+    createNewFile () {
+      this.$axios.post('/api/docker/createFile/', {
+        dir: this.currentDir,
+        filename: this.newFilename,
+        containerid: this.containerid
+      }).finally(() => {
+        this.newFilename = ''
+        this.getFileSystemData()
+        this.newFilePopoverVisible = false
+      })
+    },
+    createNewFolder () {
+      this.$axios.post('/api/docker/createFolder/', {
+        dir: this.currentDir + '/' + this.newFoldername,
+        containerid: this.containerid
+      }).finally(() => {
+        this.newFoldername = ''
+        this.getFileSystemData()
+        this.newFilePopoverVisible = false
+      })
+    },
+    downloadFile (node) {
+      const dir = node.data.url
+        .split('/').slice(0, -1).join('/')
+      this.downloadLinkData.href = `/api/docker/downloadFile/?dir=${dir}&containerid=${this.containerid}&filename=${node.label}`
+      this.downloadLinkData.download = node.label
+
+      setTimeout(() => {
+        this.$message.success('开始下载')
+        this.$refs['download-link'].$el.click()
+        node.contextmenuVisible = false
+      }, 0)
+    },
+    downloadFolder () {
+      this.downloadLinkData.href = `/api/docker/downloadFolder/?dir=.&containerid=${this.containerid}`
+      this.downloadLinkData.download = 'project.tar'
+
+      setTimeout(() => {
+        this.$message.success('开始下载')
+        this.$refs['download-link'].$el.click()
+      }, 0)
+    },
+    deleteFileOrFolder (node) {
+      let deleteTask
+      console.log(node)
+      if (node.data.isDir) {
+        const dir = node.data.url
+        deleteTask = this.$axios.delete('/api/docker/deleteFolder/', {
+          data: {
+            dir: dir,
+            containerid: this.containerid
+          }
+        })
+      } else {
+        const dir = node.data.url
+          .split('/').slice(0, -1).join('/')
+        deleteTask = this.$axios.delete('/api/docker/deleteFile/', {
+          data: {
+            dir: dir,
+            filename: node.label,
+            containerid: this.containerid
+          }
+        })
+      }
+      deleteTask.finally(() => {
+        this.getFileSystemData()
+      })
+    },
+    renameFile (node) {
+      const dir = node.data.url
+        .split('/').slice(0, -1).join('/')
+      this.$axios.post('/api/docker/renameFile/', {
+        dir: dir,
+        filename: node.label,
+        newname: this.renameNewName,
+        containerid: this.containerid
+      }).finally(() => {
+        node.renamePopoverVisible = false
+        node.contextmenuVisible = false
+        this.getFileSystemData()
+      })
+    }
+  },
+  computed: {
+    currentDir () {
+      if (this.fileTreeCurrentFileData === '') {
+        return '.'
+      } else {
+        if (this.fileTreeCurrentFileData.isDir) { return this.fileTreeCurrentFileData.url } else {
+          return this.fileTreeCurrentFileData.url
+            .split('/').slice(0, -1).join('/')
+        }
+      }
     }
   }
 }
@@ -355,7 +540,7 @@ export default {
   text-align: left;
 }
 
-.custom-tree-node > .el-image {
+.custom-tree-node>.el-image {
   height: 16px;
   margin-right: 4px;
 }
@@ -364,7 +549,8 @@ export default {
   height: 20px;
 }
 
-.el-textarea, .el-input {
+.el-textarea,
+.el-input {
   --el-input-border-radius: none;
 }
 </style>
@@ -381,6 +567,10 @@ export default {
 
 .el-popover.el-popper {
   padding: 0;
+}
+
+.delete-file-popconfirm.el-popover.el-popper {
+  padding: 12px;
 }
 
 .file-contextmenu,
