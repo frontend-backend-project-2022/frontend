@@ -24,7 +24,8 @@ export default {
   },
   data () {
     return {
-      editor: ''
+      editor: '',
+      webSocket: ''
     }
   },
   mounted () {
@@ -63,6 +64,7 @@ export default {
     // create the web socket
     const url = 'ws://localhost:5000/python'
     const webSocket = new WebSocket(url)
+    this.webSocket = webSocket
     // connect to python language server when the web socket is opened
     webSocket.onopen = () => {
       const socket = toSocket(webSocket)
@@ -96,11 +98,15 @@ export default {
         }
       })
     }
+
+    console.log(editor.getModel())
+  },
+  unmounted () {
+    this.webSocket.close()
+    console.log('Editor WebSocket Closed.')
   },
   methods: {
-    fitEditor () {
-      this.editor.domElement.style.height = '400px'
-      this.editor.layout()
+    changeModel () {
     }
   }
 }

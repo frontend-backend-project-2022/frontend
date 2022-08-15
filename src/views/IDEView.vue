@@ -44,7 +44,7 @@
                 </el-button>
               </template>
               <template #default>
-                <el-input v-model="newFilename" placeholder="请输入新文件名">
+                <el-input v-model="newFilename" placeholder="请输入新文件名" @keyup.enter="EnterKeyWrapper(createNewFile, $event)">
                   <template #append>
                     <el-button type="primary" @click="createNewFile">
                       创建
@@ -61,7 +61,7 @@
                 </el-button>
               </template>
               <template #default>
-                <el-input v-model="newFoldername" placeholder="请输入新文件夹名称">
+                <el-input v-model="newFoldername" placeholder="请输入新文件夹名称" @keyup.enter="EnterKeyWrapper(createNewFolder, $event)">
                   <template #append>
                     <el-button type="primary" @click="createNewFolder">
                       创建
@@ -104,7 +104,7 @@
                     <el-button text>重命名</el-button>
                   </template>
                   <template #default>
-                    <el-input v-model="renameNewName" placeholder="请输入新文件名">
+                    <el-input v-model="renameNewName" placeholder="请输入新文件名" @keyup.enter="EnterKeyWrapper(() => {renameFile(node)}, $event)">
                       <template #append>
                         <el-button type="primary" @click="renameFile(node)">
                           重命名
@@ -197,12 +197,16 @@ import 'xterm/lib/xterm.js'
 import { FitAddon } from 'xterm-addon-fit'
 import { io } from 'socket.io-client'
 
+import _ from 'lodash'
+
 export default {
   data () {
     return {
+      // project info
       containerid: '',
       projectInfo: {},
-      editorText: 'from flask import Flask\n',
+
+      // file system data
       filesData: [],
       fileTreeCurrentFileData: '',
       newFilename: '',
@@ -215,23 +219,32 @@ export default {
         download: ''
       },
       uploadFileList: [],
+
+      // editor
+      editorText: 'from flask import Flask\n',
+
+      // footer
       footerExpanded: true,
       nowActiveTab: '终端',
       nowActiveFileTab: '',
+      outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
+      debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
+      debugInputData: 'qwq',
+      xtermSocket: '',
+
       FileTypeIconUrlSet: {
         folder: require('../assets/folder.png'),
         file: require('../assets/file.png'),
         python: require('../assets/python.png'),
         cpp: require('../assets/cpp.png')
-      },
-      outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
-      debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
-      debugInputData: 'qwq',
-      xtermSocket: ''
+      }
     }
   },
   mounted () {
     this.initXtermTerimial()
+    setInterval(() => {
+      this.getFileSystemData()
+    }, 5000)
   },
   unmounted () {
     this.xtermSocket.emit('disconnectSignal', this.containerid, () => { console.log('xterm disconnect') })
@@ -321,7 +334,10 @@ export default {
     getFileSystemData () {
       return this.$axios.get(`/api/docker/getdir/${this.containerid}`)
         .then((response) => {
-          this.filesData = this.transferRawFilesData(response.data, './')
+          const newFilesData = this.transferRawFilesData(response.data, './')
+          if (!_.isEqual(this.filesData, newFilesData)) {
+            this.filesData = newFilesData
+          }
         })
     },
     handleFileTreeCurrentChange (nodeData, node) {
@@ -422,6 +438,10 @@ export default {
       }).then(() => {
         this.getFileSystemData()
       })
+    },
+    EnterKeyWrapper (func, event) {
+      console.log(func, event)
+      func()
     }
   },
   computed: {
