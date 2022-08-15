@@ -226,11 +226,15 @@ export default {
       },
       outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
-      debugInputData: 'qwq'
+      debugInputData: 'qwq',
+      xtermSocket: ''
     }
   },
   mounted () {
     this.initXtermTerimial()
+  },
+  unmounted () {
+    this.xtermSocket.emit('disconnectSignal', this.containerid, () => { console.log('xterm disconnect') })
   },
   components: {
     MonacoEditor
@@ -275,14 +279,14 @@ export default {
       fitAddon.fit()
 
       const socket = io('http://localhost:5000')
+      this.xtermSocket = socket
       term.onData(chunk => {
         socket.emit('message', chunk)
       })
       term.onResize(function (evt) {
         fitAddon.fit()
       })
-      socket.emit('connectSignal', this.containerid, () => {
-      })
+      socket.emit('connectSignal', this.containerid)
       socket.on('response', (data) => {
         term.write(data)
       })
@@ -317,7 +321,6 @@ export default {
     getFileSystemData () {
       return this.$axios.get(`/api/docker/getdir/${this.containerid}`)
         .then((response) => {
-          console.log(response.data)
           this.filesData = this.transferRawFilesData(response.data, './')
         })
     },
