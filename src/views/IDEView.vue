@@ -74,9 +74,12 @@
             <el-button text @click="downloadFolder">
               <img class="file-utils-icon" src="../assets/download.png" />
             </el-button>
-            <el-button text>
-              <img class="file-utils-icon" src="../assets/upload.png" />
-            </el-button>
+
+            <el-upload v-model:file-list="uploadFileList" :http-request="uploadFileXHR" :show-file-list="false">
+              <el-button text>
+                <img class="file-utils-icon" src="../assets/upload.png" />
+              </el-button>
+            </el-upload>
 
           </el-space>
         </el-row>
@@ -211,6 +214,7 @@ export default {
         href: '',
         download: ''
       },
+      uploadFileList: [],
       footerExpanded: true,
       nowActiveTab: '终端',
       nowActiveFileTab: '',
@@ -244,7 +248,6 @@ export default {
       }
     },
     handleTabClick (pane, event) {
-      console.log(this.nowActiveTab, pane, event)
       if (this.footerExpanded === false) {
         this.footerExpanded = true
       } else {
@@ -254,7 +257,6 @@ export default {
       }
     },
     getFileIconUrl (node) {
-      console.log(node.label)
       let filetype = 'file'
       if ('children' in node.data) { // folder
         filetype = 'folder'
@@ -280,7 +282,6 @@ export default {
         fitAddon.fit()
       })
       socket.emit('connectSignal', this.containerid, () => {
-        console.log(socket.id) // x8WIv7-mJelg7on_ALbx
       })
       socket.on('response', (data) => {
         term.write(data)
@@ -316,6 +317,7 @@ export default {
     getFileSystemData () {
       return this.$axios.get(`/api/docker/getdir/${this.containerid}`)
         .then((response) => {
+          console.log(response.data)
           this.filesData = this.transferRawFilesData(response.data, './')
         })
     },
@@ -367,7 +369,6 @@ export default {
     },
     deleteFileOrFolder (node) {
       let deleteTask
-      console.log(node)
       if (node.data.isDir) {
         const dir = node.data.url
         deleteTask = this.$axios.delete('/api/docker/deleteFolder/', {
@@ -402,6 +403,20 @@ export default {
       }).finally(() => {
         node.renamePopoverVisible = false
         node.contextmenuVisible = false
+        this.getFileSystemData()
+      })
+    },
+    uploadFileXHR (options) {
+      const formData = new FormData()
+      formData.append('file', options.file)
+      formData.append('dir', this.currentDir)
+      formData.append('containerid', this.containerid)
+
+      this.$axios.post('/api/docker/uploadFile/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(() => {
         this.getFileSystemData()
       })
     }
