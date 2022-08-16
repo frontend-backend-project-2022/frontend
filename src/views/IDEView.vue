@@ -44,7 +44,8 @@
                 </el-button>
               </template>
               <template #default>
-                <el-input v-model="newFilename" placeholder="请输入新文件名" @keyup.enter="EnterKeyWrapper(createNewFile, $event)">
+                <el-input v-model="newFilename" placeholder="请输入新文件名"
+                  @keyup.enter="EnterKeyWrapper(createNewFile, $event)">
                   <template #append>
                     <el-button type="primary" @click="createNewFile">
                       创建
@@ -61,7 +62,8 @@
                 </el-button>
               </template>
               <template #default>
-                <el-input v-model="newFoldername" placeholder="请输入新文件夹名称" @keyup.enter="EnterKeyWrapper(createNewFolder, $event)">
+                <el-input v-model="newFoldername" placeholder="请输入新文件夹名称"
+                  @keyup.enter="EnterKeyWrapper(createNewFolder, $event)">
                   <template #append>
                     <el-button type="primary" @click="createNewFolder">
                       创建
@@ -86,7 +88,7 @@
 
         <el-divider class="fs-divider"></el-divider>
 
-        <el-tree ref="file-tree" :data="filesData" highlight-current indent="8" @contextmenu.prevent="" draggable
+        <el-tree ref="file-tree" :data="filesData" highlight-current indent="8" @contextmenu.prevent="" draggable node-key="url"
           @current-change="handleFileTreeCurrentChange">
           <template #default="{ node }">
 
@@ -104,7 +106,8 @@
                     <el-button text>重命名</el-button>
                   </template>
                   <template #default>
-                    <el-input v-model="renameNewName" placeholder="请输入新文件名" @keyup.enter="EnterKeyWrapper(() => {renameFile(node)}, $event)">
+                    <el-input v-model="renameNewName" placeholder="请输入新文件名"
+                      @keyup.enter="EnterKeyWrapper(() => { renameFile(node) }, $event)">
                       <template #append>
                         <el-button type="primary" @click="renameFile(node)">
                           重命名
@@ -137,9 +140,10 @@
 
       <el-container>
         <el-header class="editor-header" height="20px">
-          <el-tabs type="card" class="editor-tabs" v-model="nowActiveFileTab" closable>
-            <el-tab-pane name="qwq" label="main.py"></el-tab-pane>
-            <el-tab-pane name="f" label="requirements.txt"></el-tab-pane>
+          <el-tabs type="card" class="editor-tabs"  v-model="nowActiveEditorTabName" closable @tab-remove="handleEditorTabRemove"
+          @tab-change="handleEditorTabChange">
+              <el-tab-pane v-for="item in editorTabsData" :key="item.url" :label="item.label" :name="item.url">
+              </el-tab-pane>
           </el-tabs>
         </el-header>
 
@@ -222,11 +226,12 @@ export default {
 
       // editor
       editorText: 'from flask import Flask\n',
+      nowActiveEditorTabName: './main.py',
+      editorTabsData: [],
 
       // footer
       footerExpanded: true,
       nowActiveTab: '终端',
-      nowActiveFileTab: '',
       outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugInputData: 'qwq',
@@ -342,8 +347,17 @@ export default {
     },
     handleFileTreeCurrentChange (nodeData, node) {
       this.fileTreeCurrentFileData = nodeData
-    },
 
+      // add / switch to new file
+      if (!nodeData.isDir) {
+        if (!this.editorTabsData.find(
+          tabData => (tabData.url === nodeData.url)
+        )) {
+          this.editorTabsData.push(nodeData)
+        }
+        this.nowActiveEditorTabName = nodeData.url
+      }
+    },
     createNewFile () {
       this.$axios.post('/api/docker/createFile/', {
         dir: this.currentDir,
@@ -442,6 +456,18 @@ export default {
     EnterKeyWrapper (func, event) {
       console.log(func, event)
       func()
+    },
+    handleEditorTabRemove (tabName) {
+      const IsRemoveNowActive = tabName === this.nowActiveEditorTabName
+      this.editorTabsData = this.editorTabsData
+        .filter(tabData => (tabData.url !== tabName))
+
+      if (IsRemoveNowActive) {
+        this.nowActiveEditorTabName = this.editorTabsData[0].url
+      }
+    },
+    handleEditorTabChange (tabName) {
+      this.$refs['file-tree'].setCurrentKey(tabName)
     }
   },
   computed: {
