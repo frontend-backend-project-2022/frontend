@@ -24,7 +24,6 @@ export default {
   },
   data () {
     return {
-      editor: '',
       webSocket: ''
     }
   },
@@ -32,19 +31,7 @@ export default {
     StandaloneServices.initialize({
       ...getMessageServiceOverride(document.body)
     })
-    // register Monaco languages
-    monaco.languages.register({
-      id: 'python',
-      extensions: ['.py', '.pyc', '.pyw', 'pyo', 'pyd'],
-      aliases: ['python', 'py']
-    })
-    // create editor
     const editor = monaco.editor.create(document.getElementById('container'), {
-      model: monaco.editor.createModel(
-        this.data,
-        this.language,
-        monaco.Uri.parse('inmemory://model.py')
-      ),
       glyphMargin: true,
       lightbulb: {
         enabled: true
@@ -55,10 +42,7 @@ export default {
       }
     })
     this.editor = editor
-    // emit change when text changed. (auto used by v-model)
-    editor.onDidChangeModelContent = (event) => {
-      this.$emit('update:data', editor.getValue())
-    }
+
     // install Monaco language client services
     MonacoServices.install(editor)
     // create the web socket
@@ -98,15 +82,22 @@ export default {
         }
       })
     }
-
-    console.log(editor.getModel())
   },
   unmounted () {
     this.webSocket.close()
     console.log('Editor WebSocket Closed.')
   },
   methods: {
-    changeModel () {
+    createTextModel (text, filename) {
+      return monaco.editor.createModel(
+        text,
+        undefined,
+        monaco.Uri.file(filename)
+      )
+    },
+    changeModel (textModel) {
+      console.log(textModel)
+      this.editor.setModel(textModel)
     }
   }
 }

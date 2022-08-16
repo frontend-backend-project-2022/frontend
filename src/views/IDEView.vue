@@ -88,7 +88,7 @@
 
         <el-divider class="fs-divider"></el-divider>
 
-        <el-tree ref="file-tree" :data="filesData" highlight-current indent="8" @contextmenu.prevent="" draggable node-key="url"
+        <el-tree ref="file-tree" :data="filesData" highlight-current @contextmenu.prevent="" draggable node-key="url"
           @current-change="handleFileTreeCurrentChange">
           <template #default="{ node }">
 
@@ -148,7 +148,12 @@
         </el-header>
 
         <el-main>
-          <MonacoEditor ref="editor" v-model:data="editorText" language="python" id="monaco-editor" />
+          <MonacoEditor ref="editor" language="python" id="monaco-editor" v-show="editorTabsData.length !== 0"/>
+          <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
+            <div>单击左侧文件打开代码编辑器</div>
+            <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
+
+          </div>
         </el-main>
 
         <el-footer ref="footer" :class="{ 'footer-expanded': footerExpanded }">
@@ -225,7 +230,6 @@ export default {
       uploadFileList: [],
 
       // editor
-      editorText: 'from flask import Flask\n',
       nowActiveEditorTabName: './main.py',
       editorTabsData: [],
 
@@ -260,6 +264,14 @@ export default {
   async created () {
     this.containerid = this.$route.params.containerid
     await Promise.all([this.getContainerData(), this.getFileSystemData()])
+    this.url2TextModel = {}
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 's') {
+        // Prevent the Save dialog to open
+        e.preventDefault()
+        this.handleCtrlS()
+      }
+    })
   },
   methods: {
     handleOpenTerminal () {
@@ -345,7 +357,7 @@ export default {
           }
         })
     },
-    handleFileTreeCurrentChange (nodeData, node) {
+    async handleFileTreeCurrentChange (nodeData, node) {
       this.fileTreeCurrentFileData = nodeData
 
       // add / switch to new file
@@ -353,6 +365,16 @@ export default {
         if (!this.editorTabsData.find(
           tabData => (tabData.url === nodeData.url)
         )) {
+          // open new tab
+          const text = await this.$axios.post('/api/docker/downloadContent/', {
+            containerid: this.containerid,
+            dir: this.currentDir,
+            filename: nodeData.label
+          }, {
+            transformResponse: x => x
+          }).then(response => response.data.toString())
+          this.url2TextModel[nodeData.url] =
+            this.$refs.editor.createTextModel(text, nodeData.label)
           this.editorTabsData.push(nodeData)
         }
         this.nowActiveEditorTabName = nodeData.url
@@ -457,17 +479,44 @@ export default {
       console.log(func, event)
       func()
     },
-    handleEditorTabRemove (tabName) {
+    async handleEditorTabRemove (tabName) {
       const IsRemoveNowActive = tabName === this.nowActiveEditorTabName
       this.editorTabsData = this.editorTabsData
         .filter(tabData => (tabData.url !== tabName))
 
+      // save content to server when tab close
+      await this.saveFileToServer(tabName)
+
       if (IsRemoveNowActive) {
-        this.nowActiveEditorTabName = this.editorTabsData[0].url
+        if (this.editorTabsData.length !== 0) {
+          this.nowActiveEditorTabName = this.editorTabsData[0].url
+          this.$refs.editor.changeModel(this.url2TextModel[this.nowActiveEditorTabName])
+        } else {
+          this.nowActiveEditorTabName = ''
+        }
       }
+
+      // destory text model
+      const textModel = this.url2TextModel[tabName]
+      textModel.dispose()
+    },
+    async saveFileToServer (url) {
+      const textModel = this.url2TextModel[url]
+      await this.$axios.post('/api/docker/uploadContent/', {
+        containerid: this.containerid,
+        dir: url.split('/').slice(0, -1).join('/'),
+        filename: url.split('/').slice(-1)[0],
+        content: textModel.getValue()
+      }).then(() => {
+        this.$message.success(`${url}：已保存`)
+      })
     },
     handleEditorTabChange (tabName) {
       this.$refs['file-tree'].setCurrentKey(tabName)
+      this.$refs.editor.changeModel(this.url2TextModel[tabName])
+    },
+    handleCtrlS () {
+      this.saveFileToServer(this.nowActiveEditorTabName)
     }
   },
   computed: {
@@ -616,6 +665,22 @@ export default {
 .el-textarea,
 .el-input {
   --el-input-border-radius: none;
+}
+
+.editor-placeholder {
+  height: 100%;
+  width: 100%;
+  padding-top: 100px;
+
+  color: #909399;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 100;
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+
+.editor-placeholder > div {
+  margin-top: 20px;
 }
 </style>
 
