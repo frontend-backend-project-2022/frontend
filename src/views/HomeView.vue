@@ -185,7 +185,7 @@ export default {
     },
     async projectFormSubmit () {
       const response = await this.$axios.post('/api/database/createProject', this.projectForm)
-      if (response.status === 200) {
+      if (response.status === 201) {
         this.$message.success('创建工程成功')
         await this.getProjectList()
         this.createDialogVisible = false
