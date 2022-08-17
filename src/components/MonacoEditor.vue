@@ -6,13 +6,14 @@
 
 <script>
 import * as monaco from 'monaco-editor'
-import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc'
+import { WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc'
 import {
   MonacoLanguageClient,
   CloseAction,
   ErrorAction,
   MonacoServices
 } from 'monaco-languageclient'
+import { io } from 'socket.io-client'
 
 export default {
   name: 'MonacoEditor',
@@ -22,7 +23,6 @@ export default {
   },
   data () {
     return {
-      webSocket: ''
     }
   },
   mounted () {
@@ -38,15 +38,14 @@ export default {
     })
     this.editor = editor
 
-    // install Monaco language client services
     MonacoServices.install(editor)
-    // create the web socket
-    const url = 'ws://localhost:5000/python'
-    const webSocket = new WebSocket(url)
-    this.webSocket = webSocket
-    // connect to python language server when the web socket is opened
-    webSocket.onopen = () => {
-      const socket = toSocket(webSocket)
+
+    const socketio = io('http://localhost:5000')
+    this.socketio = socketio
+    socketio.on('connect', () => {
+      console.log('Connected.')
+      socketio.emit('python.connect')
+      const socket = socketioToSocketJsonPRC(socketio)
       const reader = new WebSocketMessageReader(socket)
       const writer = new WebSocketMessageWriter(socket)
       const languageClient = createLanguageClient({
@@ -55,7 +54,7 @@ export default {
       })
       languageClient.start()
       reader.onClose(() => languageClient.stop())
-    }
+    })
 
     function createLanguageClient (transports) {
       return new MonacoLanguageClient({
@@ -77,10 +76,34 @@ export default {
         }
       })
     }
+
+    function socketioToSocketJsonPRC (socketio) {
+      return {
+        send: content => socketio.emit('python.receive', content),
+        onMessage: cb => {
+          socketio.on('python.send', msg => {
+            cb(msg)
+          })
+        },
+        onError: cb => {
+          socketio.on('connect_error', event => {
+            if ('message' in event) {
+              cb(event.message)
+            }
+          })
+        },
+        onClose: cb => {
+          socketio.on('python.disconnect', event => cb(event.code, event.reason))
+        },
+        dispose: () => {
+          socketio.emit('python.disconnect')
+        }
+      }
+    }
   },
   unmounted () {
-    this.webSocket.close()
-    console.log('Editor WebSocket Closed.')
+    this.socketio.close()
+    console.log('SocketIO Closed.')
   },
   methods: {
     createTextModel (text, filename) {

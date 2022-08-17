@@ -28,7 +28,7 @@
     <el-container>
 
       <el-aside width="300px">
-        <el-row justify="space-between" style="padding-right: 4px;">
+        <el-row justify="space-between" style="padding-right: 4px;height: 38px;">
           <span class="fs-title">
             文件资源管理器
           </span>
@@ -152,6 +152,8 @@
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
+            <div>单击下方<img class="file-utils-icon" src="../assets/terminal.png" />
+                终端打开远程终端</div>
 
           </div>
         </el-main>
@@ -600,7 +602,7 @@ export default {
 
 .fs-title {
   text-align: left;
-  padding-top: 6px;
+  padding-top: 8px;
   padding-left: 12px;
   margin: 0;
   letter-spacing: 0;
