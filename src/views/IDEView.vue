@@ -257,9 +257,6 @@ export default {
       this.getFileSystemData()
     }, 5000)
   },
-  unmounted () {
-    this.xtermSocket.emit('disconnectSignal', this.containerid, () => { console.log('xterm disconnect') })
-  },
   components: {
     MonacoEditor
   },
@@ -267,6 +264,7 @@ export default {
     this.containerid = this.$route.params.containerid
     await Promise.all([this.getContainerData(), this.getFileSystemData()])
     this.url2TextModel = {}
+
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 's') {
         // Prevent the Save dialog to open

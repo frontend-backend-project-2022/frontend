@@ -40,11 +40,9 @@ export default {
 
     MonacoServices.install(editor)
 
-    const socketio = io('http://localhost:5000')
+    const socketio = io('http://localhost:5000/pyls')
     this.socketio = socketio
     socketio.on('connect', () => {
-      console.log('Connected.')
-      socketio.emit('python.connect')
       const socket = socketioToSocketJsonPRC(socketio)
       const reader = new WebSocketMessageReader(socket)
       const writer = new WebSocketMessageWriter(socket)
@@ -79,9 +77,9 @@ export default {
 
     function socketioToSocketJsonPRC (socketio) {
       return {
-        send: content => socketio.emit('python.receive', content),
+        send: content => socketio.emit('receive', content),
         onMessage: cb => {
-          socketio.on('python.send', msg => {
+          socketio.on('send', msg => {
             cb(msg)
           })
         },
@@ -93,17 +91,18 @@ export default {
           })
         },
         onClose: cb => {
-          socketio.on('python.disconnect', event => cb(event.code, event.reason))
+          socketio.on('disconnect', event => cb(event.code, event.reason))
         },
         dispose: () => {
-          socketio.emit('python.disconnect')
+          socketio.disconnect()
         }
       }
     }
   },
-  unmounted () {
-    this.socketio.close()
-    console.log('SocketIO Closed.')
+  created () {
+    window.addEventListener('beforeunload', () => {
+      this.socketio.disconnect()
+    })
   },
   methods: {
     createTextModel (text, filename) {
