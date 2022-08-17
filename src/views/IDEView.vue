@@ -4,7 +4,7 @@
     <el-header>
       <el-row justify="space-between" align="middle" style="height: 100%;">
         <span>
-          <el-button text @click="$router.push('/')">
+          <el-button text @click="openHomePage">
             <img class="home-icon" src="../assets/home.png" />
           </el-button>
         </span>
@@ -230,7 +230,7 @@ export default {
       uploadFileList: [],
 
       // editor
-      nowActiveEditorTabName: './main.py',
+      nowActiveEditorTabName: '',
       editorTabsData: [],
 
       // footer
@@ -274,6 +274,9 @@ export default {
     })
   },
   methods: {
+    openHomePage () {
+      window.open('/')
+    },
     handleOpenTerminal () {
       if (this.footerExpanded === true) {
         this.footerExpanded = false

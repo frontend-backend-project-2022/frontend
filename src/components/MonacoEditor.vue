@@ -13,8 +13,6 @@ import {
   ErrorAction,
   MonacoServices
 } from 'monaco-languageclient'
-import { StandaloneServices } from 'vscode/services'
-import getMessageServiceOverride from 'vscode/service-override/messages'
 
 export default {
   name: 'MonacoEditor',
@@ -28,9 +26,6 @@ export default {
     }
   },
   mounted () {
-    StandaloneServices.initialize({
-      ...getMessageServiceOverride(document.body)
-    })
     const editor = monaco.editor.create(document.getElementById('container'), {
       glyphMargin: true,
       lightbulb: {
