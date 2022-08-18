@@ -206,6 +206,8 @@ import * as xterm from 'xterm'
 import 'xterm/css/xterm.css'
 import 'xterm/lib/xterm.js'
 import { FitAddon } from 'xterm-addon-fit'
+import xtermTheme from 'xterm-theme'
+
 import { io } from 'socket.io-client'
 
 import _ from 'lodash'
@@ -307,7 +309,9 @@ export default {
       return this.FileTypeIconUrlSet[filetype]
     },
     initXtermTerimial () {
-      const term = new xterm.Terminal()
+      const term = new xterm.Terminal({
+        theme: xtermTheme.Ryuuko
+      })
       const fitAddon = new FitAddon()
       term.loadAddon(fitAddon)
       term.open(document.getElementById('xterm-container'))
@@ -642,6 +646,8 @@ export default {
   width: 100%;
 
   text-align: left;
+  letter-spacing: 0;
+  font-size: 16px;
 }
 
 .editor-tabs {

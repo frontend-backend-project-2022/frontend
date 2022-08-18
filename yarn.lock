@@ -3491,6 +3491,11 @@ fast-levenshtein@^2.0.6:
   resolved "https://registry.npmmirror.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==
 
+fast-plist@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.npmmirror.com/fast-plist/-/fast-plist-0.1.2.tgz#a45aff345196006d406ca6cdcd05f69051ef35b8"
+  integrity sha512-2HxzrqJhmMoxVzARjYFvkzkL2dCBB8sogU5sD8gqcZWv5UCivK9/cXM9KIPDRwU+eD3mbRDN/GhW8bO/4dtMfg==
+
 fastq@^1.6.0:
   version "1.13.0"
   resolved "https://registry.npmmirror.com/fastq/-/fastq-1.13.0.tgz#616760f88a7526bdfc596b7cab8c18938c36b98c"
@@ -4685,6 +4690,13 @@ monaco-languageclient@^2.1.0:
     vscode-languageclient "8.0.2"
     vscode-languageserver-textdocument "1.0.5"
     vscode-uri "3.0.3"
+
+monaco-themes@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.npmmirror.com/monaco-themes/-/monaco-themes-0.4.2.tgz#6939339cb2f0bfb743f6e454de4136971834f16a"
+  integrity sha512-T3kp6SC5MPJvwYGXZENCd0UOIKVgUVV5SjsiXLBhgEZBnScY+6gEbwNRK1oYmfwbf+dGVqF1bSLN5YcrFu3HmA==
+  dependencies:
+    fast-plist "^0.1.2"
 
 mrmime@^1.0.0:
   version "1.0.1"
@@ -6783,6 +6795,11 @@ xterm-addon-fit@^0.5.0:
   version "0.5.0"
   resolved "https://registry.npmmirror.com/xterm-addon-fit/-/xterm-addon-fit-0.5.0.tgz#2d51b983b786a97dcd6cde805e700c7f913bc596"
   integrity sha512-DsS9fqhXHacEmsPxBJZvfj2la30Iz9xk+UKjhQgnYNkrUIN5CYLbw7WEfz117c7+S86S/tpHPfvNxJsF5/G8wQ==
+
+xterm-theme@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmmirror.com/xterm-theme/-/xterm-theme-1.1.0.tgz#2e499c4dd6d2cf592c90389022095e1ce509bbbe"
+  integrity sha512-n2GocBEbqcz4vEl4OYkU93hEVia8GWdnqchiz/0nQ/olRUyhulGf4wfha23x/D2m0imWaIavRZtt8c6kWZXdsA==
 
 xterm@^4.19.0:
   version "4.19.0"

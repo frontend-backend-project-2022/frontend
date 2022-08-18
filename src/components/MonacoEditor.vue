@@ -14,6 +14,7 @@ import {
   MonacoServices
 } from 'monaco-languageclient'
 import { io } from 'socket.io-client'
+import themeData from 'monaco-themes/themes/LAZY.json'
 
 export default {
   name: 'MonacoEditor',
@@ -26,6 +27,7 @@ export default {
     }
   },
   mounted () {
+    monaco.editor.defineTheme('mytheme', themeData)
     const editor = monaco.editor.create(document.getElementById('container'), {
       glyphMargin: true,
       lightbulb: {
@@ -34,7 +36,8 @@ export default {
       automaticLayout: true,
       minimap: {
         enabled: false
-      }
+      },
+      theme: 'mytheme'
     })
     this.editor = editor
 
