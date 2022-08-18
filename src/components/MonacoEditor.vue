@@ -19,11 +19,45 @@ import themeData from 'monaco-themes/themes/LAZY.json'
 export default {
   name: 'MonacoEditor',
   props: {
-    data: String,
-    language: String
+    breakPointList: Array,
+    lineNumber: Number
   },
   data () {
     return {
+    }
+  },
+  computed: {
+    decorationOptionList () {
+      // break point
+      const res = this.breakPointList.map(
+        lineNumber => ({
+          range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+          options: {
+            glyphMarginClassName: 'breakPoint'
+          }
+        })
+      )
+
+      // debug line
+      if (this.lineNumber > 0) {
+        res.push({
+          range: new monaco.Range(this.lineNumber, 1, this.lineNumber, 1),
+          options: {
+            isWholeLine: true,
+            className: 'debugNowLine'
+          }
+        })
+      }
+
+      return res
+    }
+  },
+  watch: {
+    decorationOptionList (newValue) {
+      this.decorations = this.editor.deltaDecorations(
+        this.decorations,
+        newValue
+      )
     }
   },
   mounted () {
@@ -43,8 +77,29 @@ export default {
 
     MonacoServices.install(editor)
     this.socketioList = []
+    this.decorations = []
     this.installLanguageServer('python')
     this.installLanguageServer('cpp')
+
+    editor.onMouseDown(({ event, target }) => {
+      if (event.leftButton) {
+        this.mouseDownHtmlElement = target.element
+      } else {
+        this.mouseDownHtmlElement = ''
+      }
+    })
+    editor.onMouseUp(({ event, target }) => {
+      console.log(event, target)
+      if (
+        event.leftButton &&
+        target.element === this.mouseDownHtmlElement &&
+        (target.type === 2 || target.type === 3)
+      ) {
+        this.$emit('newBreakpoint', target.position.lineNumber)
+      }
+
+      // if (this.mouseDownTarget == event.target)
+    })
   },
   created () {
     window.addEventListener('beforeunload', () => {
@@ -139,5 +194,19 @@ export default {
   height: 100%;
   width: 100%;
   text-align: left;
+}
+</style>
+
+<style>
+.debugNowLine {
+  background: lightskyblue;
+}
+
+.breakPoint {
+  background: red;
+  border-radius: 50%;
+
+  transform: scale(0.45) translate(25px, -1px)
+
 }
 </style>

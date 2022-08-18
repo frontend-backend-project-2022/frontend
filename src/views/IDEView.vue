@@ -135,7 +135,6 @@
 
         <!-- hidden link for download -->
         <el-link ref="download-link" :href="downloadLinkData.href" :download="downloadLinkData.download"></el-link>
-
       </el-aside>
 
       <el-container>
@@ -148,7 +147,7 @@
         </el-header>
 
         <el-main>
-          <MonacoEditor ref="editor" :language="projectInfo.language" id="monaco-editor" v-show="editorTabsData.length !== 0"/>
+          <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0" :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint"/>
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
@@ -236,6 +235,8 @@ export default {
       // editor
       nowActiveEditorTabName: '',
       editorTabsData: [],
+      breakPointList: [],
+      debugLineNumber: 0,
 
       // footer
       footerExpanded: true,
@@ -523,9 +524,23 @@ export default {
     handleEditorTabChange (tabName) {
       this.$refs['file-tree'].setCurrentKey(tabName)
       this.$refs.editor.changeModel(this.url2TextModel[tabName])
+
+      // DEBUG
+      this.debugLineNumber = 1
+      setInterval(() => {
+        this.debugLineNumber = this.debugLineNumber + 1
+      }, 2000)
     },
     handleCtrlS () {
       this.saveFileToServer(this.nowActiveEditorTabName)
+    },
+    handleNewBreakPoint (lineNumber) {
+      const index = this.breakPointList.indexOf(lineNumber)
+      if (index !== -1) {
+        this.breakPointList.splice(index, 1)
+      } else {
+        this.breakPointList.push(lineNumber)
+      }
     }
   },
   computed: {
