@@ -39,69 +39,15 @@ export default {
     this.editor = editor
 
     MonacoServices.install(editor)
-
-    const socketio = io('http://localhost:5000/pyls')
-    this.socketio = socketio
-    socketio.on('connect', () => {
-      const socket = socketioToSocketJsonPRC(socketio)
-      const reader = new WebSocketMessageReader(socket)
-      const writer = new WebSocketMessageWriter(socket)
-      const languageClient = createLanguageClient({
-        reader,
-        writer
-      })
-      languageClient.start()
-      reader.onClose(() => languageClient.stop())
-    })
-
-    function createLanguageClient (transports) {
-      return new MonacoLanguageClient({
-        name: 'Python Language Client',
-        clientOptions: {
-          // use a language id as a document selector
-          documentSelector: ['python'],
-          // disable the default error handler
-          errorHandler: {
-            error: () => ({ action: ErrorAction.Continue }),
-            closed: () => ({ action: CloseAction.DoNotRestart })
-          }
-        },
-        // create a language client connection from the JSON RPC connection on demand
-        connectionProvider: {
-          get: () => {
-            return Promise.resolve(transports)
-          }
-        }
-      })
-    }
-
-    function socketioToSocketJsonPRC (socketio) {
-      return {
-        send: content => socketio.emit('receive', content),
-        onMessage: cb => {
-          socketio.on('send', msg => {
-            cb(msg)
-          })
-        },
-        onError: cb => {
-          socketio.on('connect_error', event => {
-            if ('message' in event) {
-              cb(event.message)
-            }
-          })
-        },
-        onClose: cb => {
-          socketio.on('disconnect', event => cb(event.code, event.reason))
-        },
-        dispose: () => {
-          socketio.disconnect()
-        }
-      }
-    }
+    this.socketioList = []
+    this.installLanguageServer('python')
+    this.installLanguageServer('cpp')
   },
   created () {
     window.addEventListener('beforeunload', () => {
-      this.socketio.disconnect()
+      this.socketioList.forEach(socketio => {
+        socketio.disconnect()
+      })
     })
   },
   methods: {
@@ -113,8 +59,67 @@ export default {
       )
     },
     changeModel (textModel) {
-      console.log(textModel)
       this.editor.setModel(textModel)
+    },
+    installLanguageServer (language) {
+      const socketio = io(`http://localhost:5000/${language}`)
+      this.socketioList.push(socketio)
+      socketio.on('connect', () => {
+        const socket = socketioToSocketJsonPRC(socketio)
+        const reader = new WebSocketMessageReader(socket)
+        const writer = new WebSocketMessageWriter(socket)
+        const languageClient = createLanguageClient({
+          reader,
+          writer
+        })
+        languageClient.start()
+        reader.onClose(() => languageClient.stop())
+      })
+
+      function createLanguageClient (transports) {
+        return new MonacoLanguageClient({
+          name: language,
+          clientOptions: {
+          // use a language id as a document selector
+            documentSelector: [language],
+            // disable the default error handler
+            errorHandler: {
+              error: () => ({ action: ErrorAction.Continue }),
+              closed: () => ({ action: CloseAction.DoNotRestart })
+            }
+          },
+          // create a language client connection from the JSON RPC connection on demand
+          connectionProvider: {
+            get: () => {
+              return Promise.resolve(transports)
+            }
+          }
+        })
+      }
+
+      function socketioToSocketJsonPRC (socketio) {
+        return {
+          send: content => socketio.emit('receive', content),
+          onMessage: cb => {
+            socketio.on('send', msg => {
+              cb(msg)
+            })
+          },
+          onError: cb => {
+            socketio.on('connect_error', event => {
+              if ('message' in event) {
+                cb(event.message)
+              }
+            })
+          },
+          onClose: cb => {
+            socketio.on('disconnect', event => cb(event.code, event.reason))
+          },
+          dispose: () => {
+            socketio.disconnect()
+          }
+        }
+      }
     }
   }
 }

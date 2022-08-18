@@ -148,7 +148,7 @@
         </el-header>
 
         <el-main>
-          <MonacoEditor ref="editor" language="python" id="monaco-editor" v-show="editorTabsData.length !== 0"/>
+          <MonacoEditor ref="editor" :language="projectInfo.language" id="monaco-editor" v-show="editorTabsData.length !== 0"/>
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
