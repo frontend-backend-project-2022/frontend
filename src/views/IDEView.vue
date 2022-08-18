@@ -241,7 +241,6 @@ export default {
       outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugInputData: 'qwq',
-      xtermSocket: '',
 
       FileTypeIconUrlSet: {
         folder: require('../assets/folder.png'),
@@ -271,6 +270,9 @@ export default {
         e.preventDefault()
         this.handleCtrlS()
       }
+    })
+    window.addEventListener('beforeunload', () => {
+      this.xtermSocket.disconnect()
     })
   },
   methods: {
@@ -311,7 +313,7 @@ export default {
       term.open(document.getElementById('xterm-container'))
       fitAddon.fit()
 
-      const socket = io('http://localhost:5000')
+      const socket = io('http://localhost:5000/xterm')
       this.xtermSocket = socket
       term.onData(chunk => {
         socket.emit('message', chunk)
@@ -319,7 +321,7 @@ export default {
       term.onResize(function (evt) {
         fitAddon.fit()
       })
-      socket.emit('connectSignal', this.containerid)
+      socket.emit('start', this.containerid)
       socket.on('response', (data) => {
         term.write(data)
       })
