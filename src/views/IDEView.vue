@@ -139,20 +139,21 @@
 
       <el-container>
         <el-header class="editor-header" height="20px">
-          <el-tabs type="card" class="editor-tabs"  v-model="nowActiveEditorTabName" closable @tab-remove="handleEditorTabRemove"
-          @tab-change="handleEditorTabChange">
-              <el-tab-pane v-for="item in editorTabsData" :key="item.url" :label="item.label" :name="item.url">
-              </el-tab-pane>
+          <el-tabs type="card" class="editor-tabs" v-model="nowActiveEditorTabName" closable
+            @tab-remove="handleEditorTabRemove" @tab-change="handleEditorTabChange">
+            <el-tab-pane v-for="item in editorTabsData" :key="item.url" :label="item.label" :name="item.url">
+            </el-tab-pane>
           </el-tabs>
         </el-header>
 
         <el-main>
-          <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0" :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint"/>
+          <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0"
+            :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint" />
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
             <div>单击下方<img class="file-utils-icon" src="../assets/terminal.png" />
-                终端打开远程终端</div>
+              终端打开远程终端</div>
 
           </div>
         </el-main>
@@ -164,7 +165,16 @@
                 <img class="bottom-shell-icon" src="../assets/terminal.png" />
                 终端
               </template>
-              <div id="xterm-container" style=""></div>
+
+              <div id="xterm-container"></div>
+              <!-- <el-tabs class="terminal-tabs" tab-position="right">
+                <el-tab-pane label="bash">
+                </el-tab-pane>
+                <el-tab-pane label="bash"></el-tab-pane>
+                <el-tab-pane label="bash"></el-tab-pane>
+                <el-tab-pane label="bash"></el-tab-pane>
+              </el-tabs> -->
+
             </el-tab-pane>
             <el-tab-pane name="输出">
               <template #label>
@@ -241,6 +251,7 @@ export default {
       // footer
       footerExpanded: true,
       nowActiveTab: '终端',
+      terminalTabPosition: '',
       outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugInputData: 'qwq',
@@ -255,9 +266,9 @@ export default {
   },
   mounted () {
     this.initXtermTerimial()
-    setInterval(() => {
-      this.getFileSystemData()
-    }, 5000)
+    // setInterval(() => {
+    //   this.getFileSystemData()
+    // }, 5000)
   },
   components: {
     MonacoEditor
@@ -275,11 +286,13 @@ export default {
       }
     })
     window.addEventListener('beforeunload', () => {
-      this.xtermSocket.disconnect()
+      this.xtermSocket.close()
+      navigator.sendBeacon(`/api/docker/closeContainer/${this.containerid}`)
     })
   },
   methods: {
     openHomePage () {
+      // this.$router.push('/')
       window.open('/')
     },
     handleOpenTerminal () {
@@ -524,12 +537,6 @@ export default {
     handleEditorTabChange (tabName) {
       this.$refs['file-tree'].setCurrentKey(tabName)
       this.$refs.editor.changeModel(this.url2TextModel[tabName])
-
-      // DEBUG
-      this.debugLineNumber = 1
-      setInterval(() => {
-        this.debugLineNumber = this.debugLineNumber + 1
-      }, 2000)
     },
     handleCtrlS () {
       this.saveFileToServer(this.nowActiveEditorTabName)
@@ -643,7 +650,7 @@ export default {
 }
 
 .footer-expanded {
-  height: 255px;
+  height: 264px;
 }
 
 .bottom-shell-container {
@@ -656,13 +663,12 @@ export default {
 }
 
 #xterm-container {
-  margin-top: 4px;
-  height: 216px;
-  width: 100%;
+  height: 230px;
+  flex-grow: 1;
 
   text-align: left;
   letter-spacing: 0;
-  font-size: 16px;
+  font-size: 12px;
 }
 
 .editor-tabs {
@@ -705,7 +711,7 @@ export default {
   letter-spacing: 4px;
 }
 
-.editor-placeholder > div {
+.editor-placeholder>div {
   margin-top: 20px;
 }
 </style>
@@ -732,5 +738,13 @@ export default {
 .file-contextmenu>.el-space__item,
 .file-contextmenu>.el-button {
   width: 100%;
+}
+
+.el-radio-button {
+  border-radius: 0;
+}
+
+.el-tabs--right .el-tabs__header.is-right {
+  margin-left: 0;
 }
 </style>
