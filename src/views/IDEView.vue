@@ -12,7 +12,7 @@
           <el-button text>
             <img class="utils-icon" src="../assets/run.png" />
           </el-button>
-          <el-button text>
+          <el-button text @click="beginDebug">
             <img class="utils-icon" src="../assets/debug.png" />
           </el-button>
           <el-button text style="margin-left: 4px;">
@@ -246,7 +246,7 @@ export default {
       nowActiveEditorTabName: '',
       editorTabsData: [],
       breakPointList: [],
-      debugLineNumber: 1,
+      debugLineNumber: 0,
 
       // footer
       footerExpanded: true,
@@ -274,6 +274,7 @@ export default {
     MonacoEditor
   },
   async created () {
+    console.log(this.BASE_URL)
     this.containerid = this.$route.params.containerid
     await Promise.all([this.getContainerData(), this.getFileSystemData()])
     this.url2TextModel = {}
@@ -331,7 +332,7 @@ export default {
       term.open(document.getElementById('xterm-container'))
       fitAddon.fit()
 
-      const socket = io('http://localhost:5000/xterm')
+      const socket = io(this.BASE_URL + '/xterm')
       this.xtermSocket = socket
       term.onData(chunk => {
         socket.emit('message', chunk)
@@ -542,22 +543,51 @@ export default {
       this.saveFileToServer(this.nowActiveEditorTabName)
     },
     handleNewBreakPoint (lineNumber) {
+      // TODO
       const index = this.breakPointList.indexOf(lineNumber)
       if (index !== -1) {
-        this.breakPointList.splice(index, 1)
+        // delete break point
+        if (this.debugLineNumber > 0) {
+          this.debugSocket.emit('delete', lineNumber)
+        } else {
+          this.breakPointList.splice(index, 1)
+        }
       } else {
-        this.breakPointList.push(lineNumber)
+        // add break point
+        if (this.debugLineNumber > 0) {
+          this.debugSocket.emit('add', lineNumber)
+        } else {
+          this.breakPointList.push(lineNumber)
+        }
       }
     },
+    beginDebug () {
+      const debugSocket = io(this.BASE_URL + '/debugger')
+      this.debugSocket = debugSocket
+
+      debugSocket.on('response', (response) => {
+        console.log('response:', response)
+        this.debugLineNumber = response.lineno
+        this.breakPointList = response.bp.filter(lineNumber => lineNumber > 0)
+      })
+      debugSocket.on('stdout', (msg) => {
+        console.log('stdout:', msg)
+      })
+      debugSocket.on('initFinished', () => {
+        this.debugLineNumber = 1
+        const breakPointList = this.breakPointList
+        debugSocket.emit('addList', breakPointList)
+      })
+      debugSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
+    },
     handleDebugSkip () {
-      // TODO
-      this.$message.success('skip')
+      this.debugSocket.emit('skip')
     },
     handleDebugStop () {
-      this.$message.success('stop')
+      this.debugSocket.emit('exit')
     },
     handleDebugStep () {
-      this.$message.success('step')
+      this.debugSocket.emit('next')
     }
   },
   computed: {

@@ -103,7 +103,6 @@ export default {
       }
     })
     editor.onMouseUp(({ event, target }) => {
-      console.log(event, target)
       if (
         event.leftButton &&
         target.element === this.mouseDownHtmlElement &&
@@ -134,7 +133,7 @@ export default {
       this.editor.setModel(textModel)
     },
     installLanguageServer (language) {
-      const socketio = io(`http://localhost:5000/${language}`)
+      const socketio = io(`${this.BASE_URL}/${language}`)
       this.socketioList.push(socketio)
       socketio.on('connect', () => {
         const socket = socketioToSocketJsonPRC(socketio)

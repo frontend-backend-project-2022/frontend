@@ -24,6 +24,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 axios.defaults.withCredentials = true
 app.config.globalProperties.$axios = axios
+app.config.globalProperties.BASE_URL = process.env.VUE_APP_BASE_URL
 
 // Login Check in Vue-router
 router.beforeEach(async (to, from, next) => {
