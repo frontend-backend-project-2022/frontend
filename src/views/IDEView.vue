@@ -16,9 +16,6 @@
             <img class="utils-icon" src="../assets/debug.png" />
           </el-button>
           <el-button text style="margin-left: 4px;">
-            <img class="utils-icon" src="../assets/stop.png" />
-          </el-button>
-          <el-button text style="margin-left: 4px;">
             <img class="utils-icon" src="../assets/config.png" />
           </el-button>
         </span>
@@ -148,7 +145,10 @@
 
         <el-main>
           <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0"
-            :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint" />
+            :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint"
+            @skip="handleDebugSkip"
+            @stop="handleDebugStop"
+            @step="handleDebugStep"/>
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
@@ -166,14 +166,14 @@
                 终端
               </template>
 
-              <div id="xterm-container"></div>
-              <!-- <el-tabs class="terminal-tabs" tab-position="right">
-                <el-tab-pane label="bash">
-                </el-tab-pane>
-                <el-tab-pane label="bash"></el-tab-pane>
-                <el-tab-pane label="bash"></el-tab-pane>
-                <el-tab-pane label="bash"></el-tab-pane>
-              </el-tabs> -->
+              <div style="display: flex">
+                <div id="xterm-container"></div>
+                <el-tabs closable style="width: 94px;" tab-position="right">
+                  <el-tab-pane label="bash"/>
+                  <el-tab-pane label="bash"/>
+                  <el-tab-pane label="todo"/>
+                </el-tabs>
+              </div>
 
             </el-tab-pane>
             <el-tab-pane name="输出">
@@ -246,7 +246,7 @@ export default {
       nowActiveEditorTabName: '',
       editorTabsData: [],
       breakPointList: [],
-      debugLineNumber: 0,
+      debugLineNumber: 1,
 
       // footer
       footerExpanded: true,
@@ -287,7 +287,7 @@ export default {
     })
     window.addEventListener('beforeunload', () => {
       this.xtermSocket.close()
-      navigator.sendBeacon(`/api/docker/closeContainer/${this.containerid}`)
+      navigator.sendBeacon(`/api/docker/closeContainer/${this.containerid}/`)
     })
   },
   methods: {
@@ -548,6 +548,16 @@ export default {
       } else {
         this.breakPointList.push(lineNumber)
       }
+    },
+    handleDebugSkip () {
+      // TODO
+      this.$message.success('skip')
+    },
+    handleDebugStop () {
+      this.$message.success('stop')
+    },
+    handleDebugStep () {
+      this.$message.success('step')
     }
   },
   computed: {

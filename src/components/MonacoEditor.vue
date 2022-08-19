@@ -1,6 +1,17 @@
 <template>
   <div class="editor">
     <div ref="container" id="container"></div>
+    <el-space v-show="isDebuging" :size="0" class="debug-button-container">
+      <el-button text @click="$emit('skip')">
+        <img class="debug-icon" src="../assets/skip.png" />
+      </el-button>
+      <el-button text @click="$emit('step')">
+        <img class="debug-icon" src="../assets/step-over.png" />
+      </el-button>
+      <el-button text @click="$emit('stop')">
+        <img class="debug-icon" src="../assets/stop.png" />
+      </el-button>
+    </el-space>
   </div>
 </template>
 
@@ -50,6 +61,9 @@ export default {
       }
 
       return res
+    },
+    isDebuging () {
+      return this.lineNumber > 0
     }
   },
   watch: {
@@ -138,7 +152,7 @@ export default {
         return new MonacoLanguageClient({
           name: language,
           clientOptions: {
-          // use a language id as a document selector
+            // use a language id as a document selector
             documentSelector: [language],
             // disable the default error handler
             errorHandler: {
@@ -185,6 +199,7 @@ export default {
 
 <style scoped>
 .editor {
+  position: relative;
   height: calc(100% - 2px);
   width: calc(100% - 2px);
   letter-spacing: 0;
@@ -194,6 +209,25 @@ export default {
   height: 100%;
   width: 100%;
   text-align: left;
+}
+
+.debug-button-container {
+  position: absolute;
+  top: 4px;
+  left: calc(50% - 64px);
+  height: 28px;
+  padding: 4px;
+
+  background: white;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+.debug-button-container .el-button.is-text {
+  padding: 8px 8px;
+}
+
+.debug-icon {
+  height: 20px;
 }
 </style>
 
@@ -207,6 +241,5 @@ export default {
   border-radius: 50%;
 
   transform: scale(0.45) translate(25px, -1px)
-
 }
 </style>
