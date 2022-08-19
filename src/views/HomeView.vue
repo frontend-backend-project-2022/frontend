@@ -20,10 +20,14 @@
             <img class="menu-icon" src="../assets/cpp.png" />
             <span>C/C++ 工程</span>
           </el-menu-item>
+          <el-menu-item index="4">
+            <img class="menu-icon" src="../assets/node-js.png" />
+            <span>Node.js 工程</span>
+          </el-menu-item>
           <el-popconfirm title="确定要登出吗？" confirm-button-text="确认" cancel-button-text="取消" confirm-button-type="danger"
             @confirm="logoutSubmit">
             <template #reference>
-              <el-menu-item index="4">
+              <el-menu-item index="5">
                 <img class="menu-icon" src="../assets/logout.png" />
                 <span>登出账号</span>
               </el-menu-item>
@@ -68,6 +72,7 @@
         <el-select v-model="projectForm.language" placeholder="请选择编程语言">
           <el-option label="Python" value="Python" />
           <el-option label="C/C++" value="C/C++" />
+          <el-option label="Node.js" value="node" />
         </el-select>
       </el-form-item>
       <el-form-item label="编译器 / 解释器版本" prop="version">
@@ -151,6 +156,8 @@ export default {
         this.nowSelectingLanguage = 'Python'
       } else if (index === '3') {
         this.nowSelectingLanguage = 'C/C++'
+      } else if (index === '4') {
+        this.nowSelectingLanguage = 'node'
       }
     },
     handleTableRowClick (row, column, event) {
@@ -197,9 +204,11 @@ export default {
   computed: {
     versionSelectOptions: function () {
       if (this.projectForm.language === 'Python') {
-        return ['Python 3.8', 'Python 3.9', 'Python 3.10']
+        return ['Python 3.7', 'Python 3.8', 'Python 3.9']
       } else if (this.projectForm.language === 'C/C++') {
-        return ['GCC 8.3', 'MSC v.1916']
+        return ['gcc 8.3', 'clang 14']
+      } else if (this.projectForm.language === 'node') {
+        return ['node 16.17', 'node 18.7']
       } else {
         return []
       }
