@@ -9,7 +9,7 @@
           </el-button>
         </span>
         <span>
-          <el-button text>
+          <el-button text @click="beginRunner">
             <img class="utils-icon" src="../assets/run.png" />
           </el-button>
           <el-button text @click="beginDebug">
@@ -174,12 +174,15 @@
               </div>
 
             </el-tab-pane>
-            <el-tab-pane name="输出">
+            <el-tab-pane name="运行">
               <template #label>
-                <img class="bottom-shell-icon" src="../assets/printer.png" />
-                输出
+                <img class="bottom-shell-icon" src="../assets/run-black.png" />
+                运行
               </template>
-              <el-input v-model="outputData" type="textarea" readonly resize="none" :rows="10" />
+              <div class="runner-placeholder">
+                单击右上角<img class="utils-icon" src="../assets/run.png" />运行当前文件
+              </div>
+              <div id="runner-container"></div>
             </el-tab-pane>
             <el-tab-pane name="调试">
               <template #label>
@@ -188,10 +191,14 @@
               </template>
               <template #default>
                 <div style="display: flex">
+                  <div class="debugger-placeholder">
+                    单击右上角<img class="utils-icon" src="../assets/debug.png" />调试当前文件
+                  </div>
                   <div id="debug-run-container"></div>
                   <div>
-                    <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly resize="none" :rows="7" />
-                    <el-input v-model="debugInputData">
+                    <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly resize="none"
+                      :rows="7" placeholder="调试时将鼠标移动到变量名上，此处将显示变量信息" />
+                    <el-input v-model="debugInputData" placeholder="也可以在此处手动输入，查看表达式的值">
                       <template #append>
                         <el-button type="primary" @click="checkDebugVariable">
                           查看表达式
@@ -256,9 +263,10 @@ export default {
       footerExpanded: true,
       nowActiveTab: '终端',
       terminalTabPosition: '',
-      outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
       debugOutputData: '',
       debugInputData: '',
+      showRunnerPlaceholder: true,
+      showDebugPlaceholder: false,
 
       FileTypeIconUrlSet: {
         folder: require('../assets/folder.png'),
@@ -573,6 +581,7 @@ export default {
       }
     },
     beginDebug () {
+      this.footerExpanded = true
       this.nowActiveTab = '调试'
       setTimeout(() => {
         const debugSocket = io(this.BASE_URL + '/debugger')
@@ -631,6 +640,20 @@ export default {
       if (this.debugLineNumber > 0) {
         this.debugSocket.emit('check', [word])
       }
+    },
+    beginRunner () {
+      this.footerExpanded = true
+      this.nowActiveTab = '运行'
+      const runnerSocket = io(this.BASE_URL + '/runner')
+      const term = this.initXtermTerimial(
+        document.getElementById('runner-container'),
+        runnerSocket
+      )
+      runnerSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
+      runnerSocket.on('end', () => {
+        term.onKey(() => term.dispose())
+        term.write('\n按任意键退出')
+      })
     }
   },
   computed: {
@@ -798,15 +821,52 @@ export default {
   margin-top: 20px;
 }
 
+.debugger-placeholder {
+  position: absolute;
+  height: 230px;
+  width: 60%;
+  text-align: center;
+  margin-top: 80px;
+
+  font-size: 24px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 100;
+  letter-spacing: 2px;
+}
+
 #debug-run-container {
   height: 230px;
   width: 60%;
+
+  z-index: 1;
+  opacity: 1;
 }
 
 .debug-var-output {
   width: 100%;
   font-size: 17px;
   font-family: 'Courier New', Courier, monospace;
+}
+
+.runner-placeholder {
+  position: absolute;
+  height: 230px;
+  width: 100%;
+  text-align: center;
+  margin-top: 80px;
+
+  font-size: 24px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 100;
+  letter-spacing: 2px;
+}
+
+#runner-container {
+  height: 230px;
+  width: 100%;
+
+  z-index: 1;
+  opacity: 1;
 }
 </style>
 
