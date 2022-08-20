@@ -146,9 +146,7 @@
         <el-main>
           <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0"
             :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint"
-            @skip="handleDebugSkip"
-            @stop="handleDebugStop"
-            @step="handleDebugStep"/>
+            @skip="handleDebugSkip" @stop="handleDebugStop" @step="handleDebugStep" />
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
@@ -169,9 +167,9 @@
               <div style="display: flex">
                 <div id="xterm-container"></div>
                 <el-tabs closable style="width: 94px;" tab-position="right">
-                  <el-tab-pane label="bash"/>
-                  <el-tab-pane label="bash"/>
-                  <el-tab-pane label="todo"/>
+                  <el-tab-pane label="bash" />
+                  <el-tab-pane label="bash" />
+                  <el-tab-pane label="todo" />
                 </el-tabs>
               </div>
 
@@ -189,14 +187,20 @@
                 调试
               </template>
               <template #default>
-                <el-input v-model="debugOutputData" type="textarea" readonly resize="none" :rows="8" />
-                <el-input v-model="debugInputData">
-                  <template #append>
-                    <el-button type="primary">
-                      发送指令
-                    </el-button>
-                  </template>
-                </el-input>
+                <div style="display: flex">
+                  <div id="debug-run-container"></div>
+                  <div>
+                    <el-input v-model="debugOutputData" type="textarea" readonly resize="none" :rows="8" />
+                    <el-input v-model="debugInputData">
+                      <template #append>
+                        <el-button type="primary">
+                          发送指令
+                        </el-button>
+                      </template>
+                    </el-input>
+                  </div>
+                </div>
+
               </template>
 
             </el-tab-pane>
@@ -265,7 +269,12 @@ export default {
     }
   },
   mounted () {
-    this.initXtermTerimial()
+    const socket = io(this.BASE_URL + '/xterm')
+    this.initXtermTerimial(
+      document.getElementById('xterm-container'),
+      socket
+    )
+    socket.emit('start', this.containerid)
     // setInterval(() => {
     //   this.getFileSystemData()
     // }, 5000)
@@ -287,7 +296,7 @@ export default {
       }
     })
     window.addEventListener('beforeunload', () => {
-      this.xtermSocket.close()
+      // this.xtermSocket.close()
       navigator.sendBeacon(`/api/docker/closeContainer/${this.containerid}/`)
     })
   },
@@ -323,25 +332,28 @@ export default {
       }
       return this.FileTypeIconUrlSet[filetype]
     },
-    initXtermTerimial () {
+    initXtermTerimial (
+      domElement,
+      socket,
+      emitEvent = 'message',
+      onEvent = 'response'
+    ) {
       const term = new xterm.Terminal({
         theme: xtermTheme.Ryuuko
       })
       const fitAddon = new FitAddon()
       term.loadAddon(fitAddon)
-      term.open(document.getElementById('xterm-container'))
+      term.open(domElement)
       fitAddon.fit()
 
-      const socket = io(this.BASE_URL + '/xterm')
-      this.xtermSocket = socket
       term.onData(chunk => {
-        socket.emit('message', chunk)
+        socket.emit(emitEvent, chunk)
       })
       term.onResize(function (evt) {
         fitAddon.fit()
       })
-      socket.emit('start', this.containerid)
-      socket.on('response', (data) => {
+
+      socket.on(onEvent, (data) => {
         term.write(data)
       })
     },
@@ -578,6 +590,12 @@ export default {
         const breakPointList = this.breakPointList
         debugSocket.emit('addList', breakPointList)
       })
+      this.initXtermTerimial(
+        document.getElementById('debug-run-container'),
+        debugSocket,
+        'stdin',
+        'stdout'
+      )
       debugSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
     },
     handleDebugSkip () {
@@ -754,6 +772,11 @@ export default {
 .editor-placeholder>div {
   margin-top: 20px;
 }
+
+#debug-run-container {
+  height: 230px;
+  width: 50%;
+}
 </style>
 
 <!-- no scoped part -->
@@ -786,5 +809,9 @@ export default {
 
 .el-tabs--right .el-tabs__header.is-right {
   margin-left: 0;
+}
+
+.xterm-viewport {
+    width: initial !important;
 }
 </style>
