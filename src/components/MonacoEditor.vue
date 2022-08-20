@@ -75,6 +75,12 @@ export default {
     }
   },
   mounted () {
+    monaco.languages.registerHoverProvider('python', {
+      provideHover: (model, position) => {
+        const word = model.getWordAtPosition(position).word
+        this.$emit('wordHover', word)
+      }
+    })
     monaco.editor.defineTheme('mytheme', themeData)
     const editor = monaco.editor.create(document.getElementById('container'), {
       glyphMargin: true,

@@ -146,7 +146,7 @@
         <el-main>
           <MonacoEditor ref="editor" id="monaco-editor" v-show="editorTabsData.length !== 0"
             :breakPointList="breakPointList" :lineNumber="debugLineNumber" @new-breakpoint="handleNewBreakPoint"
-            @skip="handleDebugSkip" @stop="handleDebugStop" @step="handleDebugStep" />
+            @skip="handleDebugSkip" @stop="handleDebugStop" @step="handleDebugStep" @word-hover="debugWordHover" />
           <div class="editor-placeholder" v-show="editorTabsData.length === 0" style="">
             <div>单击左侧文件打开代码编辑器</div>
             <div>单击左上方<img class="file-utils-icon" src="../assets/new-file.png" />图标创建新文件</div>
@@ -190,11 +190,11 @@
                 <div style="display: flex">
                   <div id="debug-run-container"></div>
                   <div>
-                    <el-input v-model="debugOutputData" type="textarea" readonly resize="none" :rows="8" />
+                    <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly resize="none" :rows="7" />
                     <el-input v-model="debugInputData">
                       <template #append>
-                        <el-button type="primary">
-                          发送指令
+                        <el-button type="primary" @click="checkDebugVariable">
+                          查看表达式
                         </el-button>
                       </template>
                     </el-input>
@@ -257,8 +257,8 @@ export default {
       nowActiveTab: '终端',
       terminalTabPosition: '',
       outputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
-      debugOutputData: '1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n',
-      debugInputData: 'qwq',
+      debugOutputData: '',
+      debugInputData: '',
 
       FileTypeIconUrlSet: {
         folder: require('../assets/folder.png'),
@@ -349,13 +349,12 @@ export default {
       term.onData(chunk => {
         socket.emit(emitEvent, chunk)
       })
-      term.onResize(function (evt) {
-        fitAddon.fit()
-      })
 
       socket.on(onEvent, (data) => {
         term.write(data)
       })
+
+      return term
     },
     transferRawFilesData (rawData, prefix) {
       const result = []
@@ -574,29 +573,45 @@ export default {
       }
     },
     beginDebug () {
-      const debugSocket = io(this.BASE_URL + '/debugger')
-      this.debugSocket = debugSocket
+      this.nowActiveTab = '调试'
+      setTimeout(() => {
+        const debugSocket = io(this.BASE_URL + '/debugger')
+        this.debugSocket = debugSocket
 
-      debugSocket.on('response', (response) => {
-        console.log('response:', response)
-        this.debugLineNumber = response.lineno
-        this.breakPointList = response.bp.filter(lineNumber => lineNumber > 0)
-      })
-      debugSocket.on('stdout', (msg) => {
-        console.log('stdout:', msg)
-      })
-      debugSocket.on('initFinished', () => {
-        this.debugLineNumber = 1
-        const breakPointList = this.breakPointList
-        debugSocket.emit('addList', breakPointList)
-      })
-      this.initXtermTerimial(
-        document.getElementById('debug-run-container'),
-        debugSocket,
-        'stdin',
-        'stdout'
-      )
-      debugSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
+        debugSocket.on('response', (response) => {
+          this.debugLineNumber = response.lineno
+          this.breakPointList = response.bp.filter(lineNumber => lineNumber > 0)
+          if (response.message !== '') {
+            const data = response.message[0]
+            // if ('type' in data) {
+            //   this.debugOutputData += `${data.type} : ${data.name} = ${data.value}\n`
+            // } else {
+            this.debugOutputData += `${data}\n`
+            // }
+          }
+        })
+        debugSocket.on('initFinished', () => {
+          this.debugLineNumber = 1
+          const breakPointList = this.breakPointList
+          debugSocket.emit('addList', breakPointList)
+        })
+        debugSocket.on('disconnect', () => {
+          this.debugLineNumber = 0
+        })
+
+        const term = this.initXtermTerimial(
+          document.getElementById('debug-run-container'),
+          debugSocket,
+          'stdin',
+          'stdout'
+        )
+        debugSocket.on('end', () => {
+          term.onKey(() => term.dispose())
+          term.write('\n按任意键退出')
+        })
+
+        debugSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
+      }, 0)
     },
     handleDebugSkip () {
       this.debugSocket.emit('skip')
@@ -606,6 +621,16 @@ export default {
     },
     handleDebugStep () {
       this.debugSocket.emit('next')
+    },
+    checkDebugVariable () {
+      if (this.debugLineNumber > 0) {
+        this.debugSocket.emit('check', [this.debugInputData])
+      }
+    },
+    debugWordHover (word) {
+      if (this.debugLineNumber > 0) {
+        this.debugSocket.emit('check', [word])
+      }
     }
   },
   computed: {
@@ -775,7 +800,13 @@ export default {
 
 #debug-run-container {
   height: 230px;
-  width: 50%;
+  width: 60%;
+}
+
+.debug-var-output {
+  width: 100%;
+  font-size: 17px;
+  font-family: 'Courier New', Courier, monospace;
 }
 </style>
 
@@ -812,6 +843,6 @@ export default {
 }
 
 .xterm-viewport {
-    width: initial !important;
+  width: initial !important;
 }
 </style>
