@@ -157,61 +157,58 @@
         </el-main>
 
         <el-footer ref="footer" :class="{ 'footer-expanded': footerExpanded }">
-          <el-tabs type="card" class="demo-tabs" v-model="nowActiveTab" @tab-click="handleTabClick">
-            <el-tab-pane name="终端">
-              <template #label>
-                <img class="bottom-shell-icon" src="../assets/terminal.png" />
-                终端
-              </template>
-
-              <div style="display: flex">
-                <div id="xterm-container"></div>
-                <el-tabs closable style="width: 94px;" tab-position="right">
-                  <el-tab-pane label="bash" />
-                  <el-tab-pane label="bash" />
-                  <el-tab-pane label="todo" />
-                </el-tabs>
-              </div>
-
-            </el-tab-pane>
-            <el-tab-pane name="运行">
-              <template #label>
-                <img class="bottom-shell-icon" src="../assets/run-black.png" />
-                运行
-              </template>
-              <div class="runner-placeholder">
-                单击右上角<img class="utils-icon" src="../assets/run.png" />，或按F9运行当前文件
-              </div>
-              <div id="runner-container"></div>
-            </el-tab-pane>
-            <el-tab-pane name="调试">
-              <template #label>
-                <img class="bottom-shell-icon" src="../assets/debug-black.png" />
-                调试
-              </template>
-              <template #default>
-                <div style="display: flex">
-                  <div class="debugger-placeholder">
-                    单击右上角<img class="utils-icon" src="../assets/debug.png" />，或按F10调试当前文件
-                  </div>
-                  <div id="debug-run-container"></div>
-                  <div>
-                    <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly resize="none"
-                      :rows="7" placeholder="调试时将鼠标移动到变量名上，此处将显示变量信息" />
-                    <el-input v-model="debugInputData" placeholder="也可以在此处手动输入，查看表达式的值">
-                      <template #append>
-                        <el-button type="primary" @click="checkDebugVariable">
-                          查看表达式
-                        </el-button>
-                      </template>
-                    </el-input>
-                  </div>
+            <el-tabs type="card" v-model="nowActiveTab"
+              @tab-click="handleTabClick">
+              <el-tab-pane v-for="id in this.termialIDList" :key="id" :name="`term-${id}`">
+                <template #label>
+                  <img class="bottom-shell-icon" src="../assets/terminal.png" />
+                  终端
+                </template>
+                <div>
+                  <div class="xterm-container" :ref="`term-${id}`"></div>
                 </div>
 
-              </template>
+              </el-tab-pane>
 
-            </el-tab-pane>
-          </el-tabs>
+              <el-tab-pane name="运行">
+                <template #label>
+                  <img class="bottom-shell-icon" src="../assets/run-black.png" />
+                  运行
+                </template>
+                <div class="runner-placeholder">
+                  单击右上角<img class="utils-icon" src="../assets/run.png" />，或按F9运行当前文件
+                </div>
+                <div id="runner-container"></div>
+              </el-tab-pane>
+              <el-tab-pane name="调试">
+                <template #label>
+                  <img class="bottom-shell-icon" src="../assets/debug-black.png" />
+                  调试
+                </template>
+                <template #default>
+                  <div style="display: flex">
+                    <div class="debugger-placeholder">
+                      单击右上角<img class="utils-icon" src="../assets/debug.png" />，或按F10调试当前文件
+                    </div>
+                    <div id="debug-run-container"></div>
+                    <div>
+                      <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly
+                        resize="none" :rows="7" placeholder="调试时将鼠标移动到变量名上，此处将显示变量信息" />
+                      <el-input v-model="debugInputData" placeholder="也可以在此处手动输入，查看表达式的值">
+                        <template #append>
+                          <el-button type="primary" @click="checkDebugVariable">
+                            查看表达式
+                          </el-button>
+                        </template>
+                      </el-input>
+                    </div>
+                  </div>
+
+                </template>
+
+              </el-tab-pane>
+            </el-tabs>
+            <el-button @click="addTerminal" class="add-terminal-button" icon="Plus" ></el-button>
         </el-footer>
 
       </el-container>
@@ -260,6 +257,8 @@ export default {
       debugLineNumber: 0,
 
       // footer
+      termialCount: 0,
+      termialIDList: [],
       footerExpanded: true,
       nowActiveTab: '终端',
       terminalTabPosition: '',
@@ -277,15 +276,7 @@ export default {
     }
   },
   mounted () {
-    const socket = io(this.BASE_URL + '/xterm')
-    this.initXtermTerimial(
-      document.getElementById('xterm-container'),
-      socket
-    )
-    socket.emit('start', this.containerid)
-    // setInterval(() => {
-    //   this.getFileSystemData()
-    // }, 5000)
+    this.addTerminal()
   },
   components: {
     MonacoEditor
@@ -319,13 +310,11 @@ export default {
       }
     })
     window.addEventListener('beforeunload', () => {
-      // this.xtermSocket.close()
       navigator.sendBeacon(`/api/docker/closeContainer/${this.containerid}/`)
     })
   },
   methods: {
     openHomePage () {
-      // this.$router.push('/')
       window.open('/')
     },
     handleOpenTerminal () {
@@ -378,6 +367,33 @@ export default {
       })
 
       return term
+    },
+    addTerminal () {
+      this.termialCount += 1
+      const termialID = this.termialCount
+      this.termialIDList.push(termialID)
+      this.nowActiveTab = `term-${termialID}`
+
+      setTimeout(() => {
+        const socket = io(this.BASE_URL + '/xterm')
+        const termDom = this.$refs[`term-${termialID}`][0]
+        console.log(this.$refs, termDom)
+        const term = this.initXtermTerimial(
+          termDom,
+          socket
+        )
+        socket.emit('start', this.containerid)
+        socket.on('end', () => {
+          term.dispose()
+          const index = this.termialIDList.indexOf(termialID)
+          this.termialIDList.splice(index, 1)
+          if (this.termialIDList.length > 0) {
+            this.nowActiveTab = `term-${this.termialIDList[0]}`
+          } else {
+            this.nowActiveTab = '调试'
+          }
+        })
+      }, 0)
     },
     transferRawFilesData (rawData, prefix) {
       const result = []
@@ -577,7 +593,6 @@ export default {
       this.saveFileToServer(this.nowActiveEditorTabName)
     },
     handleNewBreakPoint (lineNumber) {
-      // TODO
       const index = this.breakPointList.indexOf(lineNumber)
       if (index !== -1) {
         // delete break point
@@ -781,10 +796,19 @@ export default {
 }
 
 .el-footer {
+  position: relative;
   padding: 0;
   text-align: left;
   height: 36px;
   overflow: hidden;
+}
+
+.add-terminal-button {
+  position: absolute;
+  padding: 8px 10px;
+  z-index: 1;
+  top: 4px;
+  right: 4px;
 }
 
 .footer-expanded {
@@ -800,9 +824,9 @@ export default {
   margin-right: 4px;
 }
 
-#xterm-container {
+.xterm-container {
   height: 230px;
-  flex-grow: 1;
+  width: 100%;
 
   text-align: left;
   letter-spacing: 0;
@@ -937,4 +961,15 @@ export default {
 .xterm-viewport {
   width: initial !important;
 }
+
+.xterm-terminal {
+  position: absolute;
+  height: 230px;
+  width: 100%;
+}
+
+.xterm-terminal.show {
+  z-index: 1;
+}
+
 </style>
