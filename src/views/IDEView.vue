@@ -15,7 +15,7 @@
           <el-button text @click="beginDebug">
             <img class="utils-icon" src="../assets/debug.png" />
           </el-button>
-          <el-button text style="margin-left: 4px;">
+          <el-button text @click="configDialogVisible = true" style="margin-left: 4px;">
             <img class="utils-icon" src="../assets/config.png" />
           </el-button>
         </span>
@@ -157,63 +157,88 @@
         </el-main>
 
         <el-footer ref="footer" :class="{ 'footer-expanded': footerExpanded }">
-            <el-tabs type="card" v-model="nowActiveTab"
-              @tab-click="handleTabClick">
-              <el-tab-pane v-for="id in this.termialIDList" :key="id" :name="`term-${id}`">
-                <template #label>
-                  <img class="bottom-shell-icon" src="../assets/terminal.png" />
-                  终端
-                </template>
-                <div>
-                  <div class="xterm-container" :ref="`term-${id}`"></div>
-                </div>
+          <el-tabs type="card" v-model="nowActiveTab" @tab-click="handleTabClick">
+            <el-tab-pane v-for="id in this.termialIDList" :key="id" :name="`term-${id}`">
+              <template #label>
+                <img class="bottom-shell-icon" src="../assets/terminal.png" />
+                终端
+              </template>
+              <div>
+                <div class="xterm-container" :ref="`term-${id}`"></div>
+              </div>
 
-              </el-tab-pane>
+            </el-tab-pane>
 
-              <el-tab-pane name="运行">
-                <template #label>
-                  <img class="bottom-shell-icon" src="../assets/run-black.png" />
-                  运行
-                </template>
-                <div class="runner-placeholder">
-                  单击右上角<img class="utils-icon" src="../assets/run.png" />，或按F9运行当前文件
-                </div>
-                <div id="runner-container"></div>
-              </el-tab-pane>
-              <el-tab-pane name="调试">
-                <template #label>
-                  <img class="bottom-shell-icon" src="../assets/debug-black.png" />
-                  调试
-                </template>
-                <template #default>
-                  <div style="display: flex">
-                    <div class="debugger-placeholder">
-                      单击右上角<img class="utils-icon" src="../assets/debug.png" />，或按F10调试当前文件
-                    </div>
-                    <div id="debug-run-container"></div>
-                    <div>
-                      <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly
-                        resize="none" :rows="7" placeholder="调试时将鼠标移动到变量名上，此处将显示变量信息" />
-                      <el-input v-model="debugInputData" placeholder="也可以在此处手动输入，查看表达式的值">
-                        <template #append>
-                          <el-button type="primary" @click="checkDebugVariable">
-                            查看表达式
-                          </el-button>
-                        </template>
-                      </el-input>
-                    </div>
+            <el-tab-pane name="运行">
+              <template #label>
+                <img class="bottom-shell-icon" src="../assets/run-black.png" />
+                运行
+              </template>
+              <div class="runner-placeholder">
+                单击右上角<img class="utils-icon" src="../assets/run.png" />，或按F9运行当前文件
+              </div>
+              <div id="runner-container"></div>
+            </el-tab-pane>
+            <el-tab-pane name="调试">
+              <template #label>
+                <img class="bottom-shell-icon" src="../assets/debug-black.png" />
+                调试
+              </template>
+              <template #default>
+                <div style="display: flex">
+                  <div class="debugger-placeholder">
+                    单击右上角<img class="utils-icon" src="../assets/debug.png" />，或按F10调试当前文件
                   </div>
+                  <div id="debug-run-container"></div>
+                  <div>
+                    <el-input class="debug-var-output" v-model="debugOutputData" type="textarea" readonly resize="none"
+                      :rows="7" placeholder="调试时将鼠标移动到变量名上，此处将显示变量信息" />
+                    <el-input v-model="debugInputData" placeholder="也可以在此处手动输入，查看表达式的值">
+                      <template #append>
+                        <el-button type="primary" @click="checkDebugVariable">
+                          查看表达式
+                        </el-button>
+                      </template>
+                    </el-input>
+                  </div>
+                </div>
 
-                </template>
+              </template>
 
-              </el-tab-pane>
-            </el-tabs>
-            <el-button @click="addTerminal" class="add-terminal-button" icon="Plus" ></el-button>
+            </el-tab-pane>
+          </el-tabs>
+          <el-button @click="addTerminal" class="add-terminal-button" icon="Plus"></el-button>
         </el-footer>
 
       </el-container>
     </el-container>
   </el-container>
+
+  <el-drawer v-model="configDialogVisible" title="项目设置" size="45%">
+    <el-tabs tab-position="right">
+      <el-tab-pane label="依赖项管理">
+        <el-table :data="dependencyData" style="width: 100%">
+          <el-table-column prop="package" label="名称" width="180" />
+          <el-table-column prop="version" label="版本" width="180" />
+          <el-table-column>
+            <template #default="scope">
+              <el-button @click="deleteDependency(scope.row)" text type="danger">
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-row>
+              <el-input v-model="dependencyPackage" style="width: 180px" placeholder="依赖名称"></el-input>
+              <el-input v-model="dependencyVersion" placeholder="版本，留空为最新版本" style="width: 180px"></el-input>
+              <el-button :loading="addDependencyLoading" @click="addDependency" type="primary">添加依赖</el-button>
+            </el-row>
+
+      </el-tab-pane>
+      <el-tab-pane label="外观设置">
+      </el-tab-pane>
+    </el-tabs>
+  </el-drawer>
 </template>
 
 <script>
@@ -235,6 +260,13 @@ export default {
       // project info
       containerid: '',
       projectInfo: {},
+
+      // config data
+      configDialogVisible: false,
+      dependencyRawData: {},
+      dependencyPackage: '',
+      dependencyVersion: '',
+      addDependencyLoading: false,
 
       // file system data
       filesData: [],
@@ -285,6 +317,8 @@ export default {
     console.log(this.BASE_URL)
     this.containerid = this.$route.params.containerid
     await Promise.all([this.getContainerData(), this.getFileSystemData()])
+    this.getDependencyRawData()
+
     this.url2TextModel = {}
 
     document.addEventListener('keydown', e => {
@@ -429,6 +463,24 @@ export default {
           if (!_.isEqual(this.filesData, newFilesData)) {
             this.filesData = newFilesData
           }
+        })
+    },
+    getDependencyRawData () {
+      const language = this.projectInfo.language
+      let url = ''
+      if (language === 'Python') {
+        url = `/api/docker/getPipList/${this.containerid}`
+      } else if (language === 'node') {
+        url = `/api/docker/getNodejsList/${this.containerid}`
+      }
+      if (url === '') {
+        console.log('C/C++不支持依赖管理')
+        return
+      }
+      return this.$axios.get(url)
+        .then((response) => {
+          this.dependencyRawData = response.data
+          console.log('dependencyRawData', this.dependencyRawData)
         })
     },
     async handleFileTreeCurrentChange (nodeData, node) {
@@ -701,6 +753,43 @@ export default {
         term.onKey(() => term.dispose())
         term.write('\n按任意键退出')
       })
+    },
+    addDependency () {
+      const language = this.projectInfo.language
+      let url = ''
+      if (language === 'Python') {
+        url = '/api/docker/addPythonPackage/'
+      } else {
+        url = '/api/docker/addNodejsPackage/'
+      }
+      this.addDependencyLoading = true
+      this.$axios.post(url, {
+        containerid: this.containerid,
+        package: this.dependencyPackage,
+        version: this.dependencyVersion
+      }).then(() => {
+        this.getDependencyRawData()
+        this.dependencyPackage = ''
+        this.dependencyVersion = ''
+        this.addDependencyLoading = false
+      })
+    },
+    deleteDependency (rowData) {
+      const language = this.projectInfo.language
+      let url = ''
+      if (language === 'Python') {
+        url = '/api/docker/deletePythonPackage/'
+      } else {
+        url = '/api/docker/deleteNodejsPackage/'
+      }
+      this.$axios.delete(url, {
+        data: {
+          containerid: this.containerid,
+          package: rowData.package
+        }
+      }).then(() => {
+        this.getDependencyRawData()
+      })
     }
   },
   computed: {
@@ -713,6 +802,13 @@ export default {
             .split('/').slice(0, -1).join('/')
         }
       }
+    },
+    dependencyData () {
+      return Object.entries(this.dependencyRawData)
+        .map(([pkg, version]) => ({
+          package: pkg,
+          version: version
+        }))
     }
   }
 }
@@ -864,7 +960,8 @@ export default {
 .editor-placeholder {
   height: 100%;
   width: 100%;
-  padding-top: 100px;
+  padding-top: 80px;
+  box-sizing: border-box;
 
   color: #909399;
   font-family: Arial, Helvetica, sans-serif;
@@ -971,5 +1068,4 @@ export default {
 .xterm-terminal.show {
   z-index: 1;
 }
-
 </style>
