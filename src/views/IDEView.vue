@@ -180,7 +180,7 @@
                 运行
               </template>
               <div class="runner-placeholder">
-                单击右上角<img class="utils-icon" src="../assets/run.png" />运行当前文件
+                单击右上角<img class="utils-icon" src="../assets/run.png" />，或按F9运行当前文件
               </div>
               <div id="runner-container"></div>
             </el-tab-pane>
@@ -192,7 +192,7 @@
               <template #default>
                 <div style="display: flex">
                   <div class="debugger-placeholder">
-                    单击右上角<img class="utils-icon" src="../assets/debug.png" />调试当前文件
+                    单击右上角<img class="utils-icon" src="../assets/debug.png" />，或按F10调试当前文件
                   </div>
                   <div id="debug-run-container"></div>
                   <div>
@@ -298,9 +298,24 @@ export default {
 
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 's') {
-        // Prevent the Save dialog to open
         e.preventDefault()
         this.handleCtrlS()
+      } else if (e.key === 'F10') {
+        e.preventDefault()
+        if (this.debugLineNumber > 0) {
+          this.handleDebugStop()
+        } else {
+          this.beginDebug()
+        }
+      } else if (e.key === 'F9') {
+        e.preventDefault()
+        this.beginRunner()
+      } else if (e.key === 'F7') {
+        e.preventDefault()
+        this.handleDebugStep()
+      } else if (e.key === 'F6') {
+        e.preventDefault()
+        this.handleDebugSkip()
       }
     })
     window.addEventListener('beforeunload', () => {
@@ -581,6 +596,12 @@ export default {
       }
     },
     beginDebug () {
+      const supportLanguageList = ['Python']
+      if (!supportLanguageList.includes(this.projectInfo.language)) {
+        this.$message.info('当前语言不支持调试功能')
+        return
+      }
+
       this.footerExpanded = true
       this.nowActiveTab = '调试'
       setTimeout(() => {
@@ -642,6 +663,12 @@ export default {
       }
     },
     beginRunner () {
+      const supportLanguageList = ['Python', 'C/C++', 'node']
+      if (!supportLanguageList.includes(this.projectInfo.language)) {
+        this.$message.info('当前语言不支持运行功能')
+        return
+      }
+
       this.footerExpanded = true
       this.nowActiveTab = '运行'
       const runnerSocket = io(this.BASE_URL + '/runner')
@@ -649,7 +676,12 @@ export default {
         document.getElementById('runner-container'),
         runnerSocket
       )
-      runnerSocket.emit('start', this.containerid, this.nowActiveEditorTabName)
+      runnerSocket.emit(
+        'start',
+        this.containerid,
+        this.projectInfo.language,
+        this.nowActiveEditorTabName
+      )
       runnerSocket.on('end', () => {
         term.onKey(() => term.dispose())
         term.write('\n按任意键退出')
