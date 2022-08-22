@@ -204,7 +204,7 @@ export default {
   computed: {
     versionSelectOptions: function () {
       if (this.projectForm.language === 'Python') {
-        return ['Python 3.7', 'Python 3.8', 'Python 3.9']
+        return ['Python 3.8', 'Python 3.9', 'Python 3.10']
       } else if (this.projectForm.language === 'C/C++') {
         return ['gcc 8.3', 'clang 14']
       } else if (this.projectForm.language === 'node') {
