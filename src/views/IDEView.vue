@@ -685,7 +685,7 @@ export default {
 
         debugSocket.on('response', (response) => {
           console.log(response)
-          if (response.lineno[0] !== '.run.py') {
+          if (response.lineno[0] !== '.run.py' && response.lineno[0] !== './.run') {
             this.nowActiveEditorTabName = response.lineno[0]
           }
           setTimeout(() => {
