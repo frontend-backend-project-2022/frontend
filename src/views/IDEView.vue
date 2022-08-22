@@ -657,21 +657,21 @@ export default {
       if (index !== -1) {
         // delete break point
         if (this.debugLineNumber !== -1) {
-          this.debugSocket.emit('delete', lineNumber)
+          this.debugSocket.emit('delete', [this.nowActiveEditorTabName, lineNumber])
         } else {
           this.breakPointRawList.splice(index, 1)
         }
       } else {
         // add break point
         if (this.debugLineNumber !== -1) {
-          this.debugSocket.emit('add', lineNumber)
+          this.debugSocket.emit('add', [this.nowActiveEditorTabName, lineNumber])
         } else {
           this.breakPointRawList.push([this.nowActiveEditorTabName, lineNumber])
         }
       }
     },
     beginDebug () {
-      const supportLanguageList = ['Python']
+      const supportLanguageList = ['Python', 'C/C++']
       if (!supportLanguageList.includes(this.projectInfo.language)) {
         this.$message.info('当前语言不支持调试功能')
         return
@@ -680,7 +680,7 @@ export default {
       this.footerExpanded = true
       this.nowActiveTab = '调试'
       setTimeout(() => {
-        const debugSocket = io(this.BASE_URL + '/debugger')
+        const debugSocket = io(this.BASE_URL + '/gdb')
         this.debugSocket = debugSocket
 
         debugSocket.on('response', (response) => {
