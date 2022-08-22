@@ -63,7 +63,7 @@ export default {
       return res
     },
     isDebuging () {
-      return this.lineNumber > 0
+      return this.lineNumber !== -1
     }
   },
   watch: {
@@ -133,6 +133,12 @@ export default {
         text,
         undefined,
         monaco.Uri.file(filename)
+      )
+    },
+    renderDecorations () {
+      this.decorations = this.editor.deltaDecorations(
+        this.decorations,
+        this.decorationOptionList
       )
     },
     changeModel (textModel) {

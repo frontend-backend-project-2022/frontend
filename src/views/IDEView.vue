@@ -285,8 +285,8 @@ export default {
       // editor
       nowActiveEditorTabName: '',
       editorTabsData: [],
-      breakPointList: [],
-      debugLineNumber: 0,
+      breakPointRawList: [],
+      debugLineNumber: -1,
 
       // footer
       termialCount: 0,
@@ -327,7 +327,7 @@ export default {
         this.handleCtrlS()
       } else if (e.key === 'F10') {
         e.preventDefault()
-        if (this.debugLineNumber > 0) {
+        if (this.debugLineNumber !== -1) {
           this.handleDebugStop()
         } else {
           this.beginDebug()
@@ -645,20 +645,28 @@ export default {
       this.saveFileToServer(this.nowActiveEditorTabName)
     },
     handleNewBreakPoint (lineNumber) {
-      const index = this.breakPointList.indexOf(lineNumber)
+      let index = -1
+      this.breakPointRawList
+        .forEach(([fileurl, lineNumber_], index_) => {
+          if (fileurl === this.nowActiveEditorTabName &&
+          lineNumber === lineNumber_) {
+            index = index_
+          }
+        })
+      // const index = this.breakPointRawList.indexOf(lineNumber)
       if (index !== -1) {
         // delete break point
-        if (this.debugLineNumber > 0) {
+        if (this.debugLineNumber !== -1) {
           this.debugSocket.emit('delete', lineNumber)
         } else {
-          this.breakPointList.splice(index, 1)
+          this.breakPointRawList.splice(index, 1)
         }
       } else {
         // add break point
-        if (this.debugLineNumber > 0) {
+        if (this.debugLineNumber !== -1) {
           this.debugSocket.emit('add', lineNumber)
         } else {
-          this.breakPointList.push(lineNumber)
+          this.breakPointRawList.push([this.nowActiveEditorTabName, lineNumber])
         }
       }
     },
@@ -676,24 +684,29 @@ export default {
         this.debugSocket = debugSocket
 
         debugSocket.on('response', (response) => {
-          this.debugLineNumber = response.lineno
-          this.breakPointList = response.bp.filter(lineNumber => lineNumber > 0)
-          if (response.message !== '') {
-            const data = response.message[0]
-            // if ('type' in data) {
-            //   this.debugOutputData += `${data.type} : ${data.name} = ${data.value}\n`
-            // } else {
-            this.debugOutputData += `${data}\n`
-            // }
+          console.log(response)
+          if (response.lineno[0] !== '.run.py') {
+            this.nowActiveEditorTabName = response.lineno[0]
           }
+          setTimeout(() => {
+            this.debugLineNumber = response.lineno[1]
+            this.breakPointRawList = response.bp
+            if (response.message !== '') {
+              const data = response.message[0]
+              this.debugOutputData += `${data}\n`
+            }
+          }, 0)
         })
         debugSocket.on('initFinished', () => {
-          this.debugLineNumber = 1
-          const breakPointList = this.breakPointList
-          debugSocket.emit('addList', breakPointList)
+          const breakPointRawList = this.breakPointRawList
+          this.debugLineNumber = 0
+          debugSocket.emit('addList', breakPointRawList)
+        })
+        debugSocket.on('addListFinished', () => {
+          debugSocket.emit('skip')
         })
         debugSocket.on('disconnect', () => {
-          this.debugLineNumber = 0
+          this.debugLineNumber = -1
         })
 
         const term = this.initXtermTerimial(
@@ -703,6 +716,7 @@ export default {
           'stdout'
         )
         debugSocket.on('end', () => {
+          this.debugLineNumber = -1
           term.onKey(() => term.dispose())
           term.write('\n按任意键退出')
         })
@@ -720,12 +734,12 @@ export default {
       this.debugSocket.emit('next')
     },
     checkDebugVariable () {
-      if (this.debugLineNumber > 0) {
+      if (this.debugLineNumber !== -1) {
         this.debugSocket.emit('check', [this.debugInputData])
       }
     },
     debugWordHover (word) {
-      if (this.debugLineNumber > 0) {
+      if (this.debugLineNumber !== -1) {
         this.debugSocket.emit('check', [word])
       }
     },
@@ -809,6 +823,16 @@ export default {
           package: pkg,
           version: version
         }))
+    },
+    breakPointList () {
+      return this.breakPointRawList
+        .filter(([fileUrl, lineNumber]) => (fileUrl === this.nowActiveEditorTabName))
+        .map(([fileUrl, lineNumber]) => lineNumber)
+    }
+  },
+  watch: {
+    nowActiveEditorTabName (newValue) {
+      this.$refs.editor.renderDecorations()
     }
   }
 }
