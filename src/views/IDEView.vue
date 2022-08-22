@@ -680,7 +680,13 @@ export default {
       this.footerExpanded = true
       this.nowActiveTab = '调试'
       setTimeout(() => {
-        const debugSocket = io(this.BASE_URL + '/gdb')
+        let url = ''
+        if (this.projectInfo.language === 'Python') {
+          url = '/pdb'
+        } else if (this.projectInfo.language === 'C/C++') {
+          url = '/gdb'
+        }
+        const debugSocket = io(this.BASE_URL + url)
         this.debugSocket = debugSocket
 
         debugSocket.on('response', (response) => {
